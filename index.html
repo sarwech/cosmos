@@ -13,7 +13,7 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { width:100%; height:100%; overflow:hidden; background:#000; }
   body { font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#cfd8e3; user-select:none; -webkit-user-select:none; }
-  #c { position:fixed; inset:0; display:block; cursor:grab; }
+  #c { position:fixed; inset:0; display:block; cursor:grab; touch-action:none; }
   #c.dragging { cursor:grabbing; }
 
   #vignette { position:fixed; inset:0; pointer-events:none; z-index:3;
@@ -230,6 +230,10 @@ const STARS = [
  ['Aldebaran',       65.30,  68.98, 16.51,'K',3,'The eye of the bull'],
  ['Regulus',         79.30, 152.09, 11.97,'B',2,'Heart of the lion · extreme spinner'],
  ['Alioth',          81.00, 193.51, 55.96,'A',2,'Brightest star of the Big Dipper'],
+ ['Merak',           79.70, 165.46, 56.38,'A',2,'Pointer star of the Big Dipper'],
+ ['Phecda',          83.20, 178.46, 53.69,'A',2,'Bottom of the Dipper bowl'],
+ ['Megrez',          80.50, 183.86, 57.03,'A',1,'Where bowl meets handle'],
+ ['Saiph',          650.00,  86.94, -9.67,'B',4,'Orion’s right foot'],
  ['Mizar',           82.90, 200.98, 54.93,'A',2,'Famous double star in the Dipper handle'],
  ['Gacrux',          88.60, 187.79,-57.11,'M',3,'Nearest red giant'],
  ['Algol',           90.00,  47.04, 40.96,'B',2,'The "Demon Star" · winking eclipser'],
@@ -468,32 +472,106 @@ const SPHERE_VERT = `
     vec4 wp = modelMatrix * vec4(position, 1.0); vWP = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp; }`;
 
+/* Real continents: simplified coastline polygons ([lon,lat] vertex loops),
+   rasterised to an equirectangular canvas with latitude biome bands. If the
+   NASA Blue Marble texture can be fetched from a CDN it swaps in seamlessly;
+   otherwise this built-in vector Earth is what you see. */
+const COASTS = [
+ /* North & Central America */
+ [[-168,66],[-152,58],[-135,57],[-125,48],[-117,32],[-105,20],[-95,15],[-79,8],[-77,8],[-82,14],[-88,16],[-86,21],[-90,19],[-97,21],[-94,29],[-89,29],[-83,28],[-81,25],[-80,32],[-76,35],[-74,40],[-70,43],[-64,46],[-60,47],[-66,50],[-60,55],[-64,60],[-77,62],[-90,63],[-95,60],[-110,68],[-130,70],[-156,71]],
+ /* Greenland */
+ [[-58,76],[-52,82],[-40,83],[-25,82],[-20,76],[-22,70],[-30,68],[-42,60],[-48,61],[-53,66]],
+ /* South America */
+ [[-77,8],[-71,12],[-64,10],[-60,8],[-52,5],[-50,0],[-44,-3],[-35,-6],[-37,-12],[-39,-18],[-41,-23],[-48,-28],[-53,-34],[-57,-39],[-62,-41],[-65,-45],[-69,-50],[-71,-54],[-73,-50],[-72,-45],[-71,-37],[-71,-30],[-70,-18],[-75,-15],[-77,-7],[-80,-3],[-78,3]],
+ /* Africa */
+ [[-6,35],[3,37],[10,37],[11,33],[20,32],[30,31],[34,28],[37,21],[43,11],[51,12],[48,5],[42,-1],[40,-10],[36,-18],[33,-26],[27,-33],[20,-35],[16,-29],[12,-18],[9,-7],[9,0],[6,4],[-5,5],[-13,9],[-17,15],[-16,21],[-10,28]],
+ /* Eurasia */
+ [[-9,43],[-9,37],[-6,36],[-2,37],[3,43],[7,44],[12,44],[15,40],[18,40],[14,45],[19,42],[23,37],[26,40],[29,41],[30,36],[36,36],[35,33],[33,30],[35,29],[39,21],[42,15],[44,12],[52,17],[56,25],[51,28],[48,30],[57,26],[62,25],[66,25],[72,20],[73,16],[76,8],[80,13],[82,17],[87,22],[92,21],[94,16],[98,8],[103,1],[105,10],[109,15],[106,20],[110,21],[114,22],[118,25],[121,30],[126,35],[129,36],[128,39],[131,43],[140,47],[138,54],[142,60],[156,52],[160,56],[162,60],[170,65],[178,66],[170,70],[150,72],[130,72],[110,74],[90,75],[70,73],[60,70],[45,68],[38,66],[30,70],[26,71],[18,69],[12,65],[5,62],[6,58],[8,54],[4,52],[0,50],[-2,48],[-5,44]],
+ /* Britain & Ireland (rough) */
+ [[-5,50],[-3,53],[-4,58],[-7,57],[-5,54],[-8,52]],
+ /* Iceland */
+ [[-22,66],[-15,66],[-14,64],[-21,63]],
+ /* Japan */
+ [[131,31],[134,34],[140,36],[141,40],[143,43],[140,42],[136,37],[131,34]],
+ /* Madagascar */
+ [[44,-12],[50,-16],[47,-25],[44,-22]],
+ /* Sumatra · Borneo · New Guinea */
+ [[96,5],[104,-3],[106,-6],[99,1]],
+ [[109,1],[114,4],[118,1],[116,-3],[110,-2]],
+ [[131,-1],[140,-3],[147,-7],[143,-8],[134,-4]],
+ /* Australia */
+ [[114,-22],[114,-34],[118,-35],[124,-33],[130,-32],[135,-35],[138,-35],[140,-38],[147,-39],[150,-37],[153,-30],[153,-25],[146,-19],[142,-11],[136,-12],[132,-11],[126,-14],[122,-18]],
+ /* New Zealand */
+ [[173,-35],[176,-38],[174,-41],[170,-44],[167,-46],[170,-43],[173,-39]],
+];
+const ICE_POLYS = [
+ /* Antarctica (closed through the pole) */
+ [[-180,-71],[-150,-75],[-120,-73],[-90,-72],[-60,-64],[-55,-63],[-60,-70],[-30,-72],[0,-70],[30,-69],[60,-67],[90,-66],[120,-66],[150,-69],[180,-71],[180,-90],[-180,-90]],
+ /* Greenland icecap (reuse outline) */
+ [[-58,76],[-52,82],[-40,83],[-25,82],[-20,76],[-22,70],[-30,68],[-42,60],[-48,61],[-53,66]],
+];
+function makeEarthTexture() {
+  const W = 2048, H = 1024;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const X = lon => (lon + 180) / 360 * W, Y = lat => (90 - lat) / 180 * H;
+  const og = g.createLinearGradient(0, 0, 0, H);            // ocean
+  og.addColorStop(0, '#0c2f56'); og.addColorStop(0.5, '#123c66'); og.addColorStop(1, '#0c2f56');
+  g.fillStyle = og; g.fillRect(0, 0, W, H);
+  function tracePoly(p) {
+    g.beginPath(); g.moveTo(X(p[0][0]), Y(p[0][1]));
+    for (let i = 1; i < p.length; i++) g.lineTo(X(p[i][0]), Y(p[i][1]));
+    g.closePath();
+  }
+  for (const p of COASTS) { tracePoly(p); g.fillStyle = '#7d9152'; g.fill(); }
+  g.save(); g.globalCompositeOperation = 'source-atop';     // biome bands on land only
+  const bands = [[-90,-60,'#b9c9b2'],[-60,-38,'#7d9b58'],[-38,-18,'#c2a86b'],[-18,12,'#4f7f43'],
+                 [12,35,'#c8a96a'],[35,55,'#6f8f50'],[55,68,'#7e8d6a'],[68,90,'#b9c4bd']];
+  for (const [a, b, col] of bands) {
+    g.fillStyle = col; g.globalAlpha = 0.75;
+    g.fillRect(0, Y(b), W, Y(a) - Y(b));
+  }
+  g.globalAlpha = 1;
+  for (let i = 0; i < 16000; i++) {                          // terrain grain
+    g.fillStyle = Math.random() < 0.5 ? 'rgba(40,52,28,0.10)' : 'rgba(230,225,200,0.07)';
+    g.fillRect(Math.random()*W, Math.random()*H, 2 + Math.random()*5, 1 + Math.random()*3);
+  }
+  g.restore();
+  for (const p of ICE_POLYS) { tracePoly(p); g.fillStyle = '#eef3f6'; g.fill(); }
+  const t = new THREE.CanvasTexture(cv);
+  t.minFilter = THREE.LinearFilter; t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
 const earthMat = new THREE.ShaderMaterial({
-  uniforms: { uSun:{value:SUN_DIR}, uOpacity:{value:1} },
+  uniforms: { uSun:{value:SUN_DIR}, uOpacity:{value:1}, uMap:{value: makeEarthTexture()} },
   vertexShader: SPHERE_VERT,
-  fragmentShader: NOISE_GLSL + `
-    uniform vec3 uSun; uniform float uOpacity;
+  fragmentShader: `
+    uniform vec3 uSun; uniform float uOpacity; uniform sampler2D uMap;
     varying vec3 vOP; varying vec3 vWN; varying vec3 vWP;
     void main(){
       vec3 n = normalize(vOP);
-      float cont = fbm(n*2.4 + vec3(7.3));
-      float detail = fbm(n*9.0 + vec3(2.0));
-      float land = smoothstep(0.495, 0.515, cont + detail*0.08);
-      float lat = abs(n.y);
-      float ice = smoothstep(0.86, 0.93, lat + detail*0.05);
-      vec3 ocean = mix(vec3(0.012,0.09,0.22), vec3(0.02,0.18,0.34), smoothstep(0.35,0.5,cont));
-      vec3 landc = mix(vec3(0.08,0.20,0.06), vec3(0.42,0.34,0.16), smoothstep(0.3,0.75,detail));
-      landc = mix(landc, vec3(0.55,0.48,0.34), smoothstep(0.55,0.62,cont));
-      vec3 col = mix(ocean, landc, land);
-      col = mix(col, vec3(0.93,0.95,0.99), ice);
+      float lon = atan(n.z, n.x);
+      vec2 uv = vec2(0.5 - lon/6.2831853, asin(clamp(n.y,-1.0,1.0))/3.14159265 + 0.5);
+      vec3 tc = texture2D(uMap, uv).rgb;
+      float land = smoothstep(0.0, 0.08, tc.r + tc.g - tc.b*1.35);
       float diff = clamp(dot(vWN, uSun) + 0.06, 0.0, 1.0);
       diff = pow(diff, 0.75);
       vec3 viewDir = normalize(cameraPosition - vWP);
-      float spec = pow(max(dot(reflect(-uSun, vWN), viewDir), 0.0), 26.0) * (1.0-land) * 0.55;
-      col = col * (diff*1.25 + 0.018) + vec3(1.0,0.95,0.85)*spec*diff;
-      col += vec3(0.02,0.05,0.12) * (1.0-diff) * 0.35;    // faint night blue
+      float spec = pow(max(dot(reflect(-uSun, vWN), viewDir), 0.0), 30.0) * (1.0-land) * 0.5;
+      vec3 col = tc * (diff*1.3 + 0.02) + vec3(1.0,0.95,0.85)*spec*diff;
+      col += vec3(0.02,0.05,0.12) * (1.0-diff) * 0.35;      // faint night blue
       gl_FragColor = vec4(col, uOpacity); }`,
   transparent: true });
+/* optional upgrade: real NASA Blue Marble, if the CDN is reachable */
+(function(){
+  try {
+    const ld = new THREE.TextureLoader(); ld.setCrossOrigin('anonymous');
+    ld.load('https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
+      t => { t.minFilter = THREE.LinearFilter; t.wrapS = THREE.RepeatWrapping;
+             earthMat.uniforms.uMap.value = t; },
+      undefined, () => {});
+  } catch(e) {}
+})();
 const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 96), earthMat);
 earthBand.group.add(earth); earthBand.fade(earthMat);
 
@@ -683,6 +761,15 @@ function buildSystem(starRec) {
       const belt = makePoints(pos, cols, szs, op);
       sysBand.group.add(belt); sysBand.fade(belt.material, op);
     }
+    /* Voyager 1 — the farthest human-made object, at its real 2026 distance */
+    const vPos = radecToVec(258.4, 12.2, 168.5);
+    const vDot = makePoints(new Float32Array(vPos.toArray()),
+      new Float32Array([1, 0.84, 0.5]), new Float32Array([3.8]), 0.95);
+    sysBand.group.add(vDot); sysBand.fade(vDot.material, 0.95);
+    const vObj = new THREE.Object3D(); vObj.position.copy(vPos);
+    sysBand.group.add(vObj);
+    sysBand.labels.push({ obj: vObj, name: 'VOYAGER 1 · 168 AU · 48 YEARS FROM HOME',
+      cls: 'dim', pri: 5.5, minZ: 9.0, maxZ: 10.9 });
   }
 }
 buildSystem(null);
@@ -774,6 +861,39 @@ const STAR_OBJS = [];                                // {rec, pos, anchorObj}
   starsBand.group.add(field); starsBand.fade(field.material, 0.9);
 }
 
+/* Constellations — stick figures connecting the real stars, visible at sky
+   zoom. Drag while they're on screen and watch them distort in 3D: the
+   familiar shapes only exist from Earth's point of view. */
+{
+  const byName = {}; STARS.forEach(s => byName[s[0]] = radecToVec(s[2], s[3], s[1]));
+  const CONSTS = [
+    ['ORION', [['Betelgeuse','Bellatrix'],['Bellatrix','Mintaka'],['Mintaka','Alnilam'],
+               ['Alnilam','Alnitak'],['Betelgeuse','Alnitak'],['Alnitak','Saiph'],
+               ['Saiph','Rigel'],['Rigel','Mintaka']]],
+    ['THE BIG DIPPER', [['Dubhe','Merak'],['Merak','Phecda'],['Phecda','Megrez'],
+               ['Megrez','Dubhe'],['Megrez','Alioth'],['Alioth','Mizar'],['Mizar','Alkaid']]],
+  ];
+  for (const [cname, pairs] of CONSTS) {
+    const pos = new Float32Array(pairs.length*6);
+    const cen = new THREE.Vector3(); let cn = 0;
+    pairs.forEach((pr, i) => {
+      const a = byName[pr[0]], b = byName[pr[1]];
+      pos.set([a.x,a.y,a.z, b.x,b.y,b.z], i*6);
+      cen.add(a); cen.add(b); cn += 2;
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.LineBasicMaterial({ color: 0x6f8cb4, transparent: true, opacity: 0.28 });
+    starsBand.group.add(new THREE.LineSegments(geo, mat));
+    starsBand.fade(mat, 0.28);
+    const anchor = new THREE.Object3D();
+    anchor.position.copy(cen.multiplyScalar(1/cn));
+    starsBand.group.add(anchor);
+    starsBand.labels.push({ obj: anchor, name: cname, cls: 'dim', pri: 5,
+      minZ: 11.2, maxZ: 14.4 });
+  }
+}
+
 /* ========================= BAND 4 · THE MILKY WAY ========================= */
 /* unit = 100 light-years. Built in galactic coords, rotated to match the    */
 /* real sky, Sun-anchored then drifting to the Galactic Centre as you zoom.  */
@@ -783,40 +903,82 @@ function gauss() { return (Math.random()+Math.random()+Math.random()-1.5)*0.85; 
 
 /* generic particle galaxy → returns a Group */
 function makeGalaxy(R, N, opts={}) {
-  const arms = opts.arms ?? 4, pitch = opts.pitch ?? 0.30;
+  /* Barred spiral, tuned to the canonical NASA/JPL Milky Way illustration:
+     - exponential disk with INTER-ARM FILL (a galaxy is a filled disk; arms
+       are overdensities, not isolated streams)
+     - central bar; the two major arms spring from the bar's ENDS
+     - 2 major + 2 minor arms, ~1.1 wraps (pitch ≈ 12.5°)
+     - warm core → blue-white arms, pink HII star-forming knots             */
+  const arms = opts.arms ?? 4;
+  const pitch = opts.pitch ?? 0.23;                  // ≈ tan(pitch angle)
+  const barR = (opts.bar ?? 0.26) * R;               // bar half-length (0 = none)
+  const minor = opts.minorArm ?? 0.55;               // strength of alternating arms
   const g = new THREE.Group();
-  const cBulge = new THREE.Color(opts.bulgeCol ?? 0xffd9a8);
-  const cArm   = new THREE.Color(opts.armCol   ?? 0xb9cdf5);
-  const cPink  = new THREE.Color(0xff9bb5);
-  const NB = Math.floor(N*(opts.bulgeFrac ?? 0.22)), ND = N - NB;
+  const cCore = new THREE.Color(opts.bulgeCol ?? 0xffe2b0);
+  const cArm  = new THREE.Color(opts.armCol  ?? 0xc8d8ff);
+  const cFill = new THREE.Color(0xefe6d8);
+  const cPink = new THREE.Color(0xffa8be);
+  const NB = Math.floor(N*(opts.bulgeFrac ?? 0.24));
   const pos = new Float32Array(N*3), col = new Float32Array(N*3), sz = new Float32Array(N);
+  const weights = []; let wSum = 0;
+  for (let k = 0; k < arms; k++) { const w = (k % 2 === 0) ? 1 : minor; weights.push(w); wSum += w; }
+  const r0 = Math.max(barR*0.85, R*0.05);            // arms begin at the bar tips
   let i = 0;
-  for (; i < NB; i++) {                              // bulge + bar
-    const r = Math.abs(gauss())*R*0.16, a = Math.random()*6.283;
-    const bar = Math.random() < 0.4;
-    const x = bar ? gauss()*R*0.22 : Math.cos(a)*r;
-    const zz = bar ? gauss()*R*0.05 : Math.sin(a)*r;
-    pos[i*3] = x; pos[i*3+1] = gauss()*R*0.045; pos[i*3+2] = zz;
-    const c = cBulge.clone().multiplyScalar(0.5+Math.random()*0.7);
-    col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b; sz[i] = 1.1+Math.random()*1.3;
+  for (; i < NB; i++) {                              // bulge + central bar
+    let x, y, zz;
+    if (barR > 0 && Math.random() < 0.52) {
+      x = gauss()*barR*0.60; zz = gauss()*barR*0.17; y = gauss()*barR*0.11;
+    } else {
+      const rr = Math.abs(gauss())*R*0.13, a = Math.random()*6.283;
+      x = Math.cos(a)*rr; zz = Math.sin(a)*rr*0.85; y = gauss()*R*0.05;
+    }
+    pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=zz;
+    const c = cCore.clone().multiplyScalar(0.6+Math.random()*0.8);
+    col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b; sz[i] = 1.2+Math.random()*1.5;
   }
-  for (; i < N; i++) {                               // log-spiral disk
-    const f = Math.pow(Math.random(), 0.62), r = (0.10 + 0.92*f)*R;
-    const arm = Math.floor(Math.random()*arms);
-    const theta = Math.log(r/(R*0.08))/pitch + arm*(6.283/arms);
-    const spread = (0.10 + 0.34*(r/R));
-    const a = theta + gauss()*spread;
+  for (; i < N; i++) {                               // exponential disk: arms + fill
+    let r = -0.30*R*Math.log(1 - Math.random());
+    r = clamp(r, R*0.04, R*1.08);
+    const inArm = r > r0*0.85 && Math.random() < lerp(0.74, 0.52, r/R);
+    let a;
+    if (inArm) {
+      let pick = Math.random()*wSum, k = 0;
+      while (pick > weights[k]) { pick -= weights[k]; k++; }
+      a = Math.log(Math.max(r, r0)/r0)/pitch + k*(6.283/arms) + gauss()*(0.14 + 0.11*r/R);
+    } else a = Math.random()*6.283;
     pos[i*3] = Math.cos(a)*r;
-    pos[i*3+1] = gauss() * (R*0.030*Math.exp(-2.2*r/R) + R*0.006);
+    pos[i*3+1] = gauss() * (R*0.011 + R*0.02*Math.pow(r/R, 2));
     pos[i*3+2] = Math.sin(a)*r;
-    const t = r/R, pink = Math.random() < 0.035;
-    const c = (pink ? cPink.clone() : cArm.clone().lerp(cBulge, Math.max(0, 0.75-t*1.4)))
-      .multiplyScalar(0.32+Math.random()*0.78);
+    const t = r/R;
+    let c;
+    if (inArm) {
+      const pink = Math.random() < 0.045;
+      c = (pink ? cPink.clone() : cArm.clone().lerp(cCore, Math.max(0, 0.7 - t*1.5)))
+        .multiplyScalar(0.5 + Math.random()*0.7);
+      sz[i] = (pink ? 1.5 : 1.05) + Math.random()*1.35;
+    } else {
+      c = cFill.clone().lerp(cCore, Math.max(0, 0.6 - t*1.2))
+        .multiplyScalar(0.22 + Math.random()*0.33);
+      sz[i] = 0.9 + Math.random()*0.9;
+    }
     col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
-    sz[i] = 1.0+Math.random()*1.4;
   }
-  const pts = makePoints(pos, col, sz, opts.opacity ?? 0.85);
+  const pts = makePoints(pos, col, sz, opts.opacity ?? 0.95);
   g.add(pts); g.userData.mat = pts.material;
+  if (opts.spur) {                                   // the Orion Spur — our home shelf
+    const SN = 2800, sp = new Float32Array(SN*3), sc = new Float32Array(SN*3), ss = new Float32Array(SN);
+    for (let k = 0; k < SN; k++) {
+      const s = Math.random()*2 - 1;
+      const r = 267 + s*60 + gauss()*9;
+      const a = Math.PI + s*0.40 + gauss()*0.030;
+      sp[k*3] = Math.cos(a)*r; sp[k*3+1] = gauss()*4.5; sp[k*3+2] = Math.sin(a)*r;
+      const c = new THREE.Color(0xcfe0ff).multiplyScalar(0.45+Math.random()*0.6);
+      sc[k*3]=c.r; sc[k*3+1]=c.g; sc[k*3+2]=c.b;
+      ss[k] = 1.0+Math.random()*1.2;
+    }
+    const spts = makePoints(sp, sc, ss, 0.85);
+    g.add(spts); g.userData.spurMat = spts.material;
+  }
   if (opts.halo) {                                   // faint spherical halo + globulars
     const HN = opts.halo;
     const hp = new Float32Array(HN*3), hc = new Float32Array(HN*3), hs = new Float32Array(HN);
@@ -836,11 +998,13 @@ function makeGalaxy(R, N, opts={}) {
   return g;
 }
 
-const mw = makeGalaxy(500, 165000, { arms:4, pitch:0.30, bulgeFrac:0.20, halo:3200, opacity:0.88 });
+const mw = makeGalaxy(500, 165000, { arms:4, pitch:0.23, bulgeFrac:0.22, halo:3200,
+  opacity:1.0, bar:0.26, minorArm:0.55, spur:true });
 mw.quaternion.setFromRotationMatrix(GAL_M);
 galBand.group.add(mw);
-galBand.fade(mw.userData.mat, 0.88);
+galBand.fade(mw.userData.mat, 1.0);
 if (mw.userData.haloMat) galBand.fade(mw.userData.haloMat, 0.45);
+if (mw.userData.spurMat) galBand.fade(mw.userData.spurMat, 0.85);
 
 /* Sun marker, parented inside the rotating disk at the real solar radius */
 const sunGalPos = new THREE.Vector3(-267, 1.5, 0);   // galactic frame, units of 100 ly
@@ -872,8 +1036,8 @@ for (const gRec of GALAXIES) {
   const [name, ra, dec, dist, R, type, note] = gRec;
   const v = radecToVec(ra, dec, dist);
   let cloud;
-  if (type === 0) cloud = makeGalaxy(R, 24000, { arms:2, pitch:0.26, bulgeFrac:0.26, opacity:0.9, halo:600 });
-  else if (type === 1) cloud = makeGalaxy(R, 9000, { arms:4, pitch:0.38, bulgeFrac:0.14, armCol:0xa8c8f0, opacity:0.85 });
+  if (type === 0) cloud = makeGalaxy(R, 24000, { arms:2, pitch:0.30, bulgeFrac:0.26, opacity:0.95, halo:600, bar:0.16, minorArm:1 });
+  else if (type === 1) cloud = makeGalaxy(R, 9000, { arms:4, pitch:0.42, bulgeFrac:0.14, armCol:0xa8c8f0, opacity:0.9, bar:0 });
   else {                                             // irregulars & dwarfs: shaped blobs
     const N = type === 2 ? 2400 : 700;
     const pos = new Float32Array(N*3), col = new Float32Array(N*3), sz = new Float32Array(N);
@@ -969,8 +1133,9 @@ function flyTo(rec, arriveZ) {
   cancelTour();
   hideCard();
   const isSol = rec === 'SOL';
+  const sameAnchor = isSol ? anchorName === 'SOL' : anchorName === rec[0];
   const to = isSol ? new THREE.Vector3() : radecToVec(rec[2], rec[3], rec[1]);
-  buildSystem(isSol ? null : rec);
+  if (!sameAnchor) buildSystem(isSol ? null : rec);  // never reshuffle the system we're already in
   anchorName = isSol ? 'SOL' : rec[0];
   let zArr;
   if (arriveZ) zArr = arriveZ;
@@ -986,7 +1151,9 @@ function flyTo(rec, arriveZ) {
   const zMid = Math.max(zoomT, zArr, dist > 0.1 ? Math.log10(dist*KM.ly*0.45) : 0);
   flight = { from: starsAnchor.clone(), to, t: 0,
     dur: clamp(2.4 + dist/220, 2.6, 5.2),
-    zFrom: zoomT, zMid, zArr, rec: isSol ? null : rec };
+    zFrom: zoomT, zMid, zArr, rec: isSol ? null : rec,
+    single: zMid <= Math.max(zoomT, zArr) + 0.05 };  // pure zoom — skip the out-and-back
+  try { history.replaceState(null, '', isSol ? location.pathname : '#' + slug(rec[0])); } catch(err) {}
   setCaption(isSol ? 'Returning home' : rec[0], isSol ? '' : `${rec[1].toLocaleString(undefined,{maximumSignificantDigits:3})} LIGHT-YEARS FROM EARTH`, true);
 }
 
@@ -995,9 +1162,10 @@ function stepFlight(dt) {
   flight.t += dt / flight.dur;
   const t = clamp(flight.t, 0, 1);
   starsAnchor.lerpVectors(flight.from, flight.to, easeIO(t));
-  zoomT = t < 0.5
-    ? lerp(flight.zFrom, flight.zMid, easeIO(t*2))
-    : lerp(flight.zMid, flight.zArr, easeIO((t-0.5)*2));
+  zoomT = flight.single
+    ? lerp(flight.zFrom, flight.zArr, easeIO(t))
+    : (t < 0.5 ? lerp(flight.zFrom, flight.zMid, easeIO(t*2))
+               : lerp(flight.zMid, flight.zArr, easeIO((t-0.5)*2)));
   if (flight.t >= 1) {
     const rec = flight.rec; flight = null;
     setCaption('', '', false);
@@ -1056,11 +1224,13 @@ const TOUR = [
 let tour = null;
 function startTour() {
   if (anchorName !== 'SOL') {            // hard reset home for a clean take
-    buildSystem(null); anchorName = 'SOL'; starsAnchor.set(0,0,0); hideCard();
+    buildSystem(null); anchorName = 'SOL'; starsAnchor.set(0,0,0);
   }
-  flight = null;
-  tour = { i: -1, phase: 'travel', t: 0, zFrom: zoomT, dur: 1 };
-  nextLeg();
+  hideCard(); flight = null;
+  zoom = zoomT = TOUR[0].z;              // jump-cut straight to the opening frame
+  yaw = yawT = 0.62; pitch = pitchT = 0.18;
+  tour = { i: 0, phase: 'hold', t: 0, zFrom: zoomT, dur: 1 };
+  setCaption(TOUR[0].c, TOUR[0].s, true);
   document.getElementById('tourBtn').textContent = '◼ STOP';
 }
 function nextLeg() {
@@ -1106,19 +1276,35 @@ const tickEls = TICKS.map(([name, z]) => {
 });
 
 /* ============================== CONTROLS ================================== */
-let dragging = false, px = 0, py = 0;
+const ptrs = new Map();                 // multi-pointer: 1 = orbit, 2 = pinch zoom
+let pinchD = 0;
 canvas.addEventListener('pointerdown', e => {
-  dragging = true; px = e.clientX; py = e.clientY;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   canvas.classList.add('dragging'); canvas.setPointerCapture(e.pointerId);
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinchD = Math.hypot(a.x-b.x, a.y-b.y); }
   cancelTour();
 });
 canvas.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  yawT -= (e.clientX - px) * 0.0042;
-  pitchT = clamp(pitchT + (e.clientY - py) * 0.0042, -1.45, 1.45);
-  px = e.clientX; py = e.clientY;
+  const p = ptrs.get(e.pointerId);
+  if (!p) return;
+  if (ptrs.size === 2) {
+    p.x = e.clientX; p.y = e.clientY;
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a.x-b.x, a.y-b.y);
+    if (pinchD > 0) zoomT = clamp(zoomT + (pinchD - d) * 0.011, ZMIN, ZMAX);
+    pinchD = d;
+  } else {
+    yawT -= (e.clientX - p.x) * 0.0042;
+    pitchT = clamp(pitchT + (e.clientY - p.y) * 0.0042, -1.45, 1.45);
+    p.x = e.clientX; p.y = e.clientY;
+  }
 });
-addEventListener('pointerup', () => { dragging = false; canvas.classList.remove('dragging'); });
+function ptrEnd(e) {
+  ptrs.delete(e.pointerId); pinchD = 0;
+  if (!ptrs.size) canvas.classList.remove('dragging');
+}
+addEventListener('pointerup', ptrEnd);
+addEventListener('pointercancel', ptrEnd);
 addEventListener('wheel', e => {
   e.preventDefault(); cancelTour();
   const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
@@ -1357,6 +1543,18 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight);
 }
 addEventListener('resize', resize); resize();
+
+/* deep links: cosmos.html#trappist-1 flies straight there; #tour autoplays */
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function applyHash() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!h) return;
+  if (slug(h) === 'tour') { startTour(); return; }
+  const rec = STARS.find(s => slug(s[0]) === slug(h));
+  if (rec) flyTo(rec);
+}
+addEventListener('hashchange', applyHash);
+setTimeout(applyHash, 900);
 
 let last = performance.now();
 function frame(now) {
