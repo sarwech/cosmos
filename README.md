@@ -1,7 +1,7 @@
 # COSMOS — Earth to the Local Group
 
-A real-data *Powers of Ten*: one scroll wheel (or pinch), 16 orders of
-magnitude, from Earth's surface to Andromeda. One self-contained HTML file,
+A real-data *Powers of Ten*: one scroll wheel (or pinch), 20 orders of
+magnitude, from Earth's surface to the cosmic microwave background. One self-contained HTML file,
 no build, no dependencies except three.js from a CDN. Earth uses NASA's Blue
 Marble when online and falls back to a built-in vector-coastline Earth offline.
 Deep links work: try `#trappist-1`, `#betelgeuse`, or `#tour`.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COSMOS — Earth to the Local Group</title>
 <meta property="og:title" content="COSMOS — Earth to the Local Group">
-<meta property="og:description" content="A real-data Powers of Ten: one scroll wheel, 16 orders of magnitude, from Earth's surface to Andromeda. Real stars, real exoplanets you can fly to. Built by Claude Fable 5 from a single prompt.">
+<meta property="og:description" content="A real-data Powers of Ten: one scroll wheel, 20 orders of magnitude, from Earth's surface to the edge of the observable universe. Real stars, real exoplanets you can fly to. Built by Claude Fable 5 from a single prompt.">
 <meta name="twitter:card" content="summary_large_image">
 <!-- after deploying, screenshot the galaxy view, save as preview.png in the repo, then uncomment:
 <meta property="og:image" content="https://YOUR-PAGES-URL/preview.png"> -->
@@ -68,7 +68,7 @@
 
   /* ---- object labels ---- */
   .olabel { position:fixed; z-index:8; transform:translate(-50%,-130%); font-size:10px;
-    letter-spacing:0.18em; color:#b9cce6; cursor:pointer; padding:3px 7px; white-space:nowrap;
+    letter-spacing:0.18em; color:#b9cce6; cursor:pointer; padding:6px 9px; white-space:nowrap;
     text-shadow:0 0 8px #000, 0 0 3px #000; transition:color .2s; }
   .olabel:hover { color:#fff; }
   .olabel .pl { color:#6fd3c7; font-size:9px; margin-left:4px; letter-spacing:0.1em; }
@@ -91,6 +91,43 @@
   #card .x:hover { color:#fff; }
   #credit { position:fixed; bottom:5px; left:50%; transform:translateX(-50%); z-index:9;
     font-size:8.5px; letter-spacing:0.14em; color:#3c4a5e; pointer-events:none; }
+
+  /* ---- command palette (⌘K) ---- */
+  #palette { position:fixed; inset:0; z-index:20; display:none;
+    background:rgba(2,5,10,.45); backdrop-filter:blur(3px); }
+  #palette.open { display:block; }
+  #palBox { position:absolute; left:50%; top:15%; transform:translateX(-50%);
+    width:min(460px, 92vw); background:rgba(12,18,30,.93); border:1px solid #2c3e5c;
+    border-radius:14px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.65); }
+  #palInput { width:100%; background:transparent; border:none; outline:none; color:#eef3fa;
+    font-size:15px; padding:16px 18px; letter-spacing:.04em;
+    border-bottom:1px solid #223149; font-family:'Helvetica Neue',Helvetica,sans-serif; }
+  #palInput::placeholder { color:#54657c; }
+  #palList { max-height:46vh; overflow-y:auto; padding:6px; }
+  .prow { display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding:9px 12px; border-radius:8px; cursor:pointer; }
+  .prow.sel, .prow:hover { background:rgba(60,90,140,.25); }
+  .prow .pt { font-size:12.5px; color:#dbe6f5; letter-spacing:.08em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .prow .ps { font-size:9.5px; color:#6c7f99; letter-spacing:.12em; white-space:nowrap; }
+  .pgroup { font-size:8.5px; letter-spacing:.3em; color:#4a5a72; padding:10px 12px 4px; }
+
+  /* ---- mobile ---- */
+  @media (max-width: 640px) {
+    #title h1 { font-size:11px; letter-spacing:0.3em; }
+    #title p { display:none; }
+    #scaleHud { top:50px; }
+    #scaleHud .val { font-size:16px; }
+    #hint, #credit { display:none; }
+    #ladder { right:8px; }
+    #ladder .track { height:32vh; }
+    .tick { display:none; }
+    #btns { left:12px; right:12px; bottom:12px; justify-content:flex-end; flex-wrap:wrap; gap:7px; }
+    .btn { padding:8px 12px; font-size:9px; letter-spacing:0.12em; white-space:nowrap; }
+    #card { left:12px; right:12px; width:auto; top:92px; }
+    #caption { bottom:16vh; font-size:15px; max-width:92vw; }
+    #palBox { top:7%; }
+  }
 </style>
 </head>
 <body>
@@ -110,18 +147,25 @@
 <div id="ladder"><div class="track" id="ladderTrack"><div class="dot" id="ladderDot"></div></div></div>
 
 <div id="hint">
-  <b>SCROLL</b> &nbsp;zoom through 16 orders of magnitude<br>
+  <b>SCROLL</b> &nbsp;zoom through 20 orders of magnitude<br>
   <b>DRAG</b> &nbsp;look around &nbsp;&nbsp; <b>CLICK A STAR</b> &nbsp;fly to it<br>
-  <b>SPACE</b> &nbsp;play the journey &nbsp;&nbsp; <b>M</b> &nbsp;music
+  <b>SPACE</b> &nbsp;journey &nbsp;&nbsp; <b>M</b> &nbsp;music &nbsp;&nbsp; <b>P</b> &nbsp;pause &nbsp;&nbsp; <b>R</b> &nbsp;random &nbsp;&nbsp; <b>⌘K</b> &nbsp;explore
 </div>
 
 <div id="caption"></div>
 
 <div id="btns">
+  <div class="btn" id="palBtn">⌘K EXPLORE</div>
+  <div class="btn" id="pauseBtn">⏱ 1×</div>
   <div class="btn" id="musicBtn">♫ MUSIC OFF</div>
   <div class="btn" id="homeBtn">⌂ EARTH</div>
   <div class="btn primary" id="tourBtn">▶ PLAY THE JOURNEY</div>
 </div>
+
+<div id="palette"><div id="palBox">
+  <input id="palInput" type="text" placeholder="Search stars, planets, galaxies, places…" autocomplete="off" spellcheck="false">
+  <div id="palList"></div>
+</div></div>
 
 <div id="card">
   <div class="x" id="cardX">✕</div>
@@ -151,20 +195,27 @@
 
 const KM = { Re:6371, moon:384400, AU:1.496e8, ly:9.4607e12, pc:3.0857e13, kpc:3.0857e16 };
 const CAMD = 600;                          // fixed camera distance (scene units)
-const ZMIN = 3.82, ZMAX = 19.78;           // zoom = log10(km) of the view scale
+const ZMIN = 3.82, ZMAX = 24.02;           // zoom = log10(km) of the view scale
 
 /* ----------------------------- SOLAR SYSTEM ------------------------------ */
 /* a: AU, period: years, r: km, day: rotation for flavour */
 const SOL_PLANETS = [
-  { name:'MERCURY', a:0.387,  p:0.241,  r:2440,  col:0xb5a79b },
-  { name:'VENUS',   a:0.723,  p:0.615,  r:6052,  col:0xe6c89c },
-  { name:'EARTH',   a:1.000,  p:1.000,  r:6371,  col:0x6b93d6, earth:true },
-  { name:'MARS',    a:1.524,  p:1.881,  r:3390,  col:0xc1593c },
-  { name:'JUPITER', a:5.203,  p:11.86,  r:69911, col:0xd8b98a, banded:true },
-  { name:'SATURN',  a:9.537,  p:29.45,  r:58232, col:0xe3d1a8, ring:true },
-  { name:'URANUS',  a:19.19,  p:84.02,  r:25362, col:0x9bd4d6 },
-  { name:'NEPTUNE', a:30.07,  p:164.8,  r:24622, col:0x4d6fd1 },
-  { name:'PLUTO',   a:39.48,  p:248.1,  r:1188,  col:0xc9b59e, dwarf:true },
+  { name:'MERCURY', a:0.387,  p:0.241,  r:2440,  col:0xb5a79b, tex:'rock' },
+  { name:'VENUS',   a:0.723,  p:0.615,  r:6052,  col:0xe6c89c, tex:'venus' },
+  { name:'EARTH',   a:1.000,  p:1.000,  r:6371,  col:0x6b93d6, earth:true, tex:'rock' },
+  { name:'MARS',    a:1.524,  p:1.881,  r:3390,  col:0xc1593c, tex:'mars',
+    moons:[['PHOBOS',9376,11,0.319],['DEIMOS',23463,6,1.262]] },
+  { name:'JUPITER', a:5.203,  p:11.86,  r:69911, col:0xd8b98a, tex:'jupiter',
+    moons:[['IO',421800,1822,1.769,0xd8c873],['EUROPA',671100,1561,3.551,0xcfc8b8],
+           ['GANYMEDE',1070400,2634,7.155,0xa89888],['CALLISTO',1882700,2410,16.69,0x8a7f74]] },
+  { name:'SATURN',  a:9.537,  p:29.45,  r:58232, col:0xe3d1a8, ring:true, tex:'gas',
+    moons:[['TITAN',1221900,2575,15.95,0xd8a86a],['ENCELADUS',238040,252,1.37,0xeef0f2]] },
+  { name:'URANUS',  a:19.19,  p:84.02,  r:25362, col:0x9bd4d6, tex:'ice',
+    moons:[['TITANIA',435900,789,8.706,0x9a9aa0]] },
+  { name:'NEPTUNE', a:30.07,  p:164.8,  r:24622, col:0x4d6fd1, tex:'ice',
+    moons:[['TRITON',354760,1353,-5.877,0xc8d0d8]] },          // retrograde — orbits backwards
+  { name:'PLUTO',   a:39.48,  p:248.1,  r:1188,  col:0xc9b59e, dwarf:true, tex:'rock',
+    moons:[['CHARON',19591,606,6.387,0xb0a8a0]] },
 ];
 
 /* ------------------------------ REAL STARS -------------------------------
@@ -417,11 +468,14 @@ function makePoints(positions, colors, sizes, opacity, blending) {
 }
 /* ------------------------------ BAND SYSTEM ------------------------------ */
 const BANDS = [];
+const _bandV = new THREE.Vector3();
+let frameDT = 0.016;
 function makeBand(kmPerUnit, zIn0, zIn1, zOut0, zOut1) {
   const b = {
     group: new THREE.Group(), kmPerUnit, zIn0, zIn1, zOut0, zOut1,
     fades: [], labels: [], alpha: 0, scale: 1,
     offset: new THREE.Vector3(),         // band-unit offset (set per frame by offsetFn)
+    _smoothOff: new THREE.Vector3(),
     offsetFn: null,
     fade(mat, base=1) { this.fades.push({ mat, base }); mat.transparent = true; },
     update(z) {
@@ -432,7 +486,12 @@ function makeBand(kmPerUnit, zIn0, zIn1, zOut0, zOut1) {
       if (!this.group.visible) return;
       this.group.scale.setScalar(this.scale);
       if (this.offsetFn) this.offsetFn(z, this.offset);
-      this.group.position.copy(this.offset).multiplyScalar(this.scale);
+      /* smooth the offset in BAND units, then scale exactly — lerping the
+         scaled position lags exponentially while diving and loses the pin */
+      if (this.smoothPos && this._on) this._smoothOff.lerp(this.offset, Math.min(1, frameDT*8));
+      else this._smoothOff.copy(this.offset);
+      this.group.position.copy(this._smoothOff).multiplyScalar(this.scale);
+      this._on = true;
       for (const f of this.fades) {
         if (f.mat.uniforms && f.mat.uniforms.uOpacity) f.mat.uniforms.uOpacity.value = f.base * this.alpha;
         else f.mat.opacity = f.base * this.alpha;
@@ -626,12 +685,24 @@ moonPivot.rotation.x = 5.1*DEG;
 const moon = new THREE.Mesh(new THREE.SphereGeometry(0.2727, 48, 48), moonMat);
 moon.position.set(60.34, 0, 0);
 moonPivot.add(moon); earthBand.fade(moonMat);
-earthBand.labels.push({ obj: earth, name:'EARTH', cls:'big', pri: 10, minZ: 4.6, maxZ: 8.4 });
-earthBand.labels.push({ obj: moon,  name:'THE MOON', cls:'', pri: 9, minZ: 4.9, maxZ: 8.0 });
+/* constant-pixel bridge dots: Earth shrinks below a pixel around z≈6 while
+   the system band is still fading in — these carry it across the gap */
+const eDot = makePoints(new Float32Array([0,0,0]),
+  new Float32Array([0.45,0.62,0.9]), new Float32Array([5.0]), 0);
+earthBand.group.add(eDot);
+const mDotHold = new THREE.Group(); mDotHold.position.set(60.34, 0, 0); moonPivot.add(mDotHold);
+const mDot = makePoints(new Float32Array([0,0,0]),
+  new Float32Array([0.62,0.62,0.64]), new Float32Array([3.2]), 0);
+mDotHold.add(mDot);
+
+earthBand.labels.push({ obj: earth, name:'EARTH', cls:'big', pri: 10, minZ: 4.6, maxZ: 8.4, zoomTo: 4.5 });
+earthBand.labels.push({ obj: moon,  name:'THE MOON', cls:'', pri: 9, minZ: 4.9, maxZ: 8.0,
+  planet: { a: 0.00257, rkm: 1737 } });
 
 /* ====================== BAND 2 · PLANETARY SYSTEM ========================= */
 /* unit = 1 AU. Sun (or any chosen star) at origin. Rebuilt per star.        */
 const sysBand = makeBand(KM.AU, 6.25, 6.95, 10.1, 11.0);
+sysBand.smoothPos = true;                 // soften focus grabs/releases
 const RING_TEX = (() => {
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 8;
   const g = cv.getContext('2d');
@@ -648,6 +719,76 @@ function smoothJS(a,b,v){ const t = clamp((v-a)/(b-a),0,1); return t*t*(3-2*t); 
 
 const sysState = { star: null, planets: [], earthHolder: null, time0: 0 };
 let simYears = 0;
+
+/* generated planet surfaces — banded giants, cratered rock, polar caps */
+const PLANET_TEX = {};
+function planetTexture(kind, hex) {
+  const key = kind + '_' + hex;
+  if (PLANET_TEX[key]) return PLANET_TEX[key];
+  const W = 256, H = 128, cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), base = new THREE.Color(hex);
+  const css = (c, f=1) => `rgb(${Math.min(255,c.r*255*f)|0},${Math.min(255,c.g*255*f)|0},${Math.min(255,c.b*255*f)|0})`;
+  g.fillStyle = css(base); g.fillRect(0, 0, W, H);
+  if (kind === 'gas' || kind === 'jupiter' || kind === 'ice') {
+    let y = 0;                                         // latitude bands
+    const soft = kind === 'ice';
+    while (y < H) {
+      const bh = soft ? 18 + Math.random()*22 : 4 + Math.random()*13;
+      g.fillStyle = css(base, soft ? 0.9 + Math.random()*0.22 : 0.74 + Math.random()*0.55);
+      g.globalAlpha = soft ? 0.5 : 0.85;
+      g.fillRect(0, y, W, bh + 1); y += bh;
+    }
+    g.globalAlpha = kind === 'ice' ? 0.10 : 0.28;      // turbulent wisps
+    for (let i = 0; i < 240; i++) {
+      g.fillStyle = css(base, 0.7 + Math.random()*0.7);
+      g.beginPath();
+      g.ellipse(Math.random()*W, Math.random()*H, 8 + Math.random()*26, 1.5 + Math.random()*3, 0, 0, 6.3);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+    if (kind === 'jupiter') {                          // the Great Red Spot
+      g.fillStyle = 'rgba(196,86,62,0.55)';
+      g.beginPath(); g.ellipse(W*0.31, H*0.64, 19, 11, 0, 0, 6.3); g.fill();
+      g.fillStyle = 'rgba(150,55,40,0.8)';
+      g.beginPath(); g.ellipse(W*0.31, H*0.64, 12, 7, 0, 0, 6.3); g.fill();
+    }
+  } else if (kind === 'venus') {                       // creamy smeared cloud deck
+    for (let i = 0; i < 300; i++) {
+      g.fillStyle = css(base, 0.82 + Math.random()*0.4);
+      g.globalAlpha = 0.18;
+      const yy = Math.random()*H;
+      g.beginPath();
+      g.ellipse(Math.random()*W, yy, 20 + Math.random()*42, 3 + Math.random()*6,
+        (yy/H - 0.5)*0.5, 0, 6.3);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+  } else {                                             // rock / mars
+    for (let i = 0; i < 1600; i++) {                   // regolith + craters
+      g.fillStyle = css(base, 0.55 + Math.random()*0.85);
+      g.globalAlpha = 0.22;
+      const r = Math.random() < 0.85 ? 1 + Math.random()*3 : 3 + Math.random()*6;
+      g.beginPath(); g.arc(Math.random()*W, Math.random()*H, r, 0, 6.3); g.fill();
+    }
+    g.globalAlpha = 1;
+    if (kind === 'mars') {
+      g.globalAlpha = 0.3; g.fillStyle = '#5a3326';    // dark maria
+      for (let i = 0; i < 26; i++) {
+        g.beginPath();
+        g.ellipse(Math.random()*W, H*0.3 + Math.random()*H*0.4, 12 + Math.random()*30, 6 + Math.random()*12, Math.random(), 0, 6.3);
+        g.fill();
+      }
+      g.globalAlpha = 1; g.fillStyle = '#efe8e2';      // polar caps
+      g.beginPath(); g.ellipse(W/2, 2, W*0.45, 9, 0, 0, 6.3); g.fill();
+      g.beginPath(); g.ellipse(W/2, H-2, W*0.4, 7, 0, 0, 6.3); g.fill();
+    }
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.minFilter = THREE.LinearFilter; t.wrapS = THREE.RepeatWrapping;
+  PLANET_TEX[key] = t; return t;
+}
+const EXO_TEX = ['rock', 'rock', 'ice', 'gas', 'gas'];   // by planet kind
 
 function clearGroup(g) {
   while (g.children.length) {
@@ -687,18 +828,20 @@ function buildSystem(starRec) {
   /* planets */
   const list = isSol
     ? SOL_PLANETS.map(p => ({ name: p.name, a: p.a, p: p.p, rkm: p.r, col: p.col,
-        ring: p.ring, earth: p.earth, dwarf: p.dwarf }))
+        ring: p.ring, earth: p.earth, dwarf: p.dwarf, tex: p.tex, moons: p.moons }))
     : (EXO[starRec[0]] || []).map(e => ({ name: e[0].toUpperCase(), a: e[1],
-        rkm: e[2]*6371, p: e[3]/365.25, col: KIND_COL[e[4]], kind: e[4] }));
+        rkm: e[2]*6371, p: e[3]/365.25, col: KIND_COL[e[4]], kind: e[4], tex: EXO_TEX[e[4]] }));
 
   for (const pl of list) {
     const pivot = new THREE.Group(); sysBand.group.add(pivot);
     pivot.rotation.y = Math.random()*6.283;
     const holder = new THREE.Group(); holder.position.set(pl.a, 0, 0); pivot.add(holder);
+    holder.userData.sys = true;           // marks it pinnable by the system band
 
     const rAU = pl.rkm / KM.AU;
-    const pMat = new THREE.MeshLambertMaterial({ color: pl.col, transparent: true,
-      emissive: pl.col, emissiveIntensity: 0.08 });
+    const pMat = new THREE.MeshLambertMaterial({
+      map: planetTexture(pl.tex || 'rock', pl.col), color: 0xffffff, transparent: true,
+      emissive: pl.col, emissiveIntensity: 0.06 });
     const sphere = new THREE.Mesh(new THREE.SphereGeometry(Math.max(rAU, 1e-6), 32, 32), pMat);
     if (pl.earth) sphere.visible = false;   // the Earth band renders Earth — avoids z-fighting at the crossfade
     holder.add(sphere); sysBand.fade(pMat);
@@ -740,9 +883,43 @@ function buildSystem(starRec) {
     pivot.add(new THREE.LineLoop(oGeo, oMat)); sysBand.fade(oMat, 0.30);
 
     sysBand.labels.push({ obj: holder, name: pl.name, cls: 'dim', pri: pl.earth?8:4,
-      minZ: 6.5, maxZ: Math.min(10.4, 7.2 + Math.log10(pl.a+1.2)*2.6) });
-    sysState.planets.push({ pivot, holder, period: pl.p, earth: pl.earth, phase: pivot.rotation.y });
+      minZ: 6.5, maxZ: Math.min(10.4, 7.2 + Math.log10(pl.a+1.2)*2.6),
+      planet: { a: pl.a, rkm: pl.rkm } });
+    sysState.planets.push({ pivot, holder, period: pl.p, earth: pl.earth,
+      phase: pivot.rotation.y, name: pl.name, rkm: pl.rkm });
     if (pl.earth) sysState.earthHolder = holder;
+
+    /* the planet's own moons — real distances, sizes and periods */
+    if (pl.moons) for (const mn of pl.moons) {
+      const [mname, akm, rkm, pdays, mcol] = mn;
+      const aAU = akm / KM.AU, mc = mcol || 0x9a9a98;
+      const mp = new THREE.Group(); holder.add(mp);
+      mp.rotation.y = Math.random()*6.283;
+      const mh = new THREE.Group(); mh.position.set(aAU, 0, 0); mp.add(mh);
+      mh.userData.sys = true;
+      const mMat = new THREE.MeshLambertMaterial({ map: planetTexture('rock', mc),
+        color: 0xffffff, transparent: true, emissive: mc, emissiveIntensity: 0.05 });
+      const ms = new THREE.Mesh(new THREE.SphereGeometry(Math.max(rkm/KM.AU, 1e-7), 24, 24), mMat);
+      mh.add(ms); sysBand.fade(mMat);
+      const md = makePoints(new Float32Array(3),
+        new Float32Array(new THREE.Color(mc).toArray()), new Float32Array([2.8]), 0.85);
+      mh.add(md); sysBand.fade(md.material, 0.85);
+      const seg2 = 96, op2 = new Float32Array(seg2*3);
+      for (let k = 0; k < seg2; k++) {
+        const a2 = k/seg2*6.28318;
+        op2[k*3] = Math.cos(a2)*aAU; op2[k*3+2] = Math.sin(a2)*aAU;
+      }
+      const og2 = new THREE.BufferGeometry();
+      og2.setAttribute('position', new THREE.BufferAttribute(op2, 3));
+      const om2 = new THREE.LineBasicMaterial({ color: 0x3c536f, transparent: true, opacity: 0.2 });
+      mp.add(new THREE.LineLoop(og2, om2)); sysBand.fade(om2, 0.2);
+      const zA = Math.log10(akm);
+      sysBand.labels.push({ obj: mh, name: mname, cls: 'dim', pri: 3,
+        minZ: zA - 0.85, maxZ: Math.min(zA + 1.3, 7.6), planet: { a: aAU, rkm } });
+      sysState.planets.push({ pivot: mp, holder: mh,
+        period: Math.sign(pdays) * Math.max(Math.abs(pdays)/365.25, 0.02),
+        phase: mp.rotation.y, name: mname, rkm });
+    }
   }
 
   /* Sol-only furniture: asteroid + Kuiper belts */
@@ -769,13 +946,19 @@ function buildSystem(starRec) {
     const vObj = new THREE.Object3D(); vObj.position.copy(vPos);
     sysBand.group.add(vObj);
     sysBand.labels.push({ obj: vObj, name: 'VOYAGER 1 · 168 AU · 48 YEARS FROM HOME',
-      cls: 'dim', pri: 5.5, minZ: 9.0, maxZ: 10.9 });
+      cls: 'dim', pri: 5.5, minZ: 9.0, maxZ: 10.9, zoomTo: 10.5 });
   }
 }
 buildSystem(null);
 
 /* Earth-anchored → Sun-anchored drift, so leaving Earth recentres on the Sun */
 sysBand.offsetFn = (z, out) => {
+  if (focusPlanet && focusPlanet.userData.sys) {      // one of OUR planets is pinned
+    focusPlanet.getWorldPosition(_tmpV);
+    sysBand.group.worldToLocal(_tmpV);
+    out.copy(_tmpV).multiplyScalar(-1);
+    return;
+  }
   if (sysState.star) { out.set(0,0,0); return; }     // exo systems: star stays centred
   const t = smooth(7.35, 9.25, z);
   if (sysState.earthHolder) {
@@ -787,7 +970,16 @@ sysBand.offsetFn = (z, out) => {
 /* the Earth close-up band must ride along with wherever the system band put
    Earth, so both Earths stay perfectly superimposed through the crossfade */
 earthBand.offsetFn = (z, out) => {
-  if (sysState.earthHolder && !sysState.star) {
+  if (focusPlanet === moon) {              // the Moon pinned to centre
+    moon.getWorldPosition(_tmpV2);
+    earthBand.group.worldToLocal(_tmpV2);
+    out.copy(_tmpV2).multiplyScalar(-1);
+    return;
+  }
+  /* only track the system band while it is LIVE — when it's hidden its
+     matrices freeze but Earth keeps orbiting, and chasing that stale ghost
+     position dragged Earth off-centre after returning home from far out */
+  if (sysState.earthHolder && !sysState.star && sysBand.group.visible) {
     sysState.earthHolder.getWorldPosition(_tmpV2);
     out.copy(_tmpV2).divideScalar(earthBand.scale || 1);
   } else out.set(0,0,0);
@@ -1015,7 +1207,7 @@ const sunMark = makePoints(new Float32Array(sunGalPos.toArray()),
 mw.add(sunMark); galBand.fade(sunMark.material, 0.95);
 const galCenterObj = new THREE.Object3D(); mw.add(galCenterObj);
 galBand.labels.push({ obj: sunMarkObj, name:'YOU ARE HERE · THE SUN', cls:'big', pri: 9,
-  minZ: 15.4, maxZ: 18.9 });
+  minZ: 15.4, maxZ: 18.9, star: 'SOL' });
 galBand.labels.push({ obj: galCenterObj, name:'SAGITTARIUS A★', cls:'dim', pri: 6,
   minZ: 16.2, maxZ: 18.8 });
 galBand.labels.push({ obj: mw, name:'THE MILKY WAY', cls:'big', pri: 8,
@@ -1059,7 +1251,91 @@ for (const gRec of GALAXIES) {
   if (cloud.userData.haloMat) lgBand.fade(cloud.userData.haloMat, 0.45);
   const big = type <= 1 || dist < 100;
   lgBand.labels.push({ obj: cloud, name: name.toUpperCase(), cls: big ? '' : 'dim',
-    pri: type === 0 ? 8 : (type === 1 ? 6 : 3.5), minZ: big ? 17.6 : 18.6, maxZ: 21, note });
+    pri: type === 0 ? 8 : (type === 1 ? 6 : 3.5), minZ: big ? 17.6 : 18.6, maxZ: 21, note,
+    zoomTo: 19.5 });
+}
+
+/* ============== BANDS 6 & 7 · SUPERCLUSTERS → THE UNIVERSE ================ */
+/* Galaxies are not scattered — they string along dark-matter filaments.     */
+function filamentCloud(R, nNodes, nPts, hueA, hueB, redshift) {
+  const nodes = [];
+  for (let i = 0; i < nNodes; i++) {
+    let p;
+    if (i > 4 && Math.random() < 0.3) {              // clusters clump
+      const q = nodes[(Math.random()*nodes.length)|0];
+      p = q.clone().add(new THREE.Vector3(gauss(),gauss(),gauss()).multiplyScalar(R*0.08));
+    } else {
+      const u = Math.random()*2-1, th = Math.random()*6.283, d = R*Math.cbrt(Math.random());
+      const s2 = Math.sqrt(1-u*u);
+      p = new THREE.Vector3(d*s2*Math.cos(th), d*u, d*s2*Math.sin(th));
+    }
+    nodes.push(p);
+  }
+  const edges = [];
+  for (let i = 0; i < nNodes; i++) {                 // each node → 2 nearest
+    const ds = nodes.map((q,j) => [nodes[i].distanceToSquared(q), j]).sort((a,b) => a[0]-b[0]);
+    for (let k = 1; k <= 2 && k < ds.length; k++) edges.push([i, ds[k][1]]);
+  }
+  const pos = new Float32Array(nPts*3), col = new Float32Array(nPts*3), szs = new Float32Array(nPts);
+  const cA = new THREE.Color(hueA), cB = new THREE.Color(hueB), cR = new THREE.Color(0xff8866);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < nPts; i++) {
+    const atNode = Math.random() < 0.32;
+    if (atNode) {
+      const n = nodes[(Math.random()*nNodes)|0];
+      v.set(gauss(),gauss(),gauss()).multiplyScalar(R*0.022).add(n);
+    } else {
+      const e = edges[(Math.random()*edges.length)|0];
+      v.lerpVectors(nodes[e[0]], nodes[e[1]], Math.random())
+       .add(new THREE.Vector3(gauss(),gauss(),gauss()).multiplyScalar(R*0.014));
+    }
+    pos[i*3]=v.x; pos[i*3+1]=v.y; pos[i*3+2]=v.z;
+    const c = cA.clone().lerp(cB, Math.random());
+    if (redshift) c.lerp(cR, Math.pow(Math.min(v.length()/R, 1), 1.6)*0.8);
+    c.multiplyScalar(0.25 + Math.random()*0.5);
+    col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+    szs[i] = (atNode ? 1.3 : 0.95) + Math.random()*0.8;
+  }
+  return makePoints(pos, col, szs, 0.85);
+}
+
+/* Band 6 — superclusters (1 unit = 1 Mpc, out to ~85 Mpc) */
+const scBand = makeBand(3.0857e19, 19.45, 20.45, 60, 61);
+{
+  const web = filamentCloud(85, 64, 26000, 0xcfd8ff, 0xbfa8e0, false);
+  scBand.group.add(web); scBand.fade(web.material, 0.85);
+  const us = makePoints(new Float32Array([0,0,0]), new Float32Array([0.85,0.9,1]), new Float32Array([5]), 0.9);
+  scBand.group.add(us); scBand.fade(us.material, 0.9);
+  const usObj = new THREE.Object3D(); scBand.group.add(usObj);
+  scBand.labels.push({ obj: usObj, name:'THE LOCAL GROUP · HOME', cls:'big', pri: 8.5, minZ: 20.0, maxZ: 22.3 });
+  const virgo = new THREE.Object3D(); virgo.position.copy(radecToVec(187.7, 12.4, 16.5));
+  scBand.group.add(virgo);
+  scBand.labels.push({ obj: virgo, name:'VIRGO CLUSTER', cls:'dim', pri: 6, minZ: 19.9, maxZ: 21.8 });
+  const ga = new THREE.Object3D(); ga.position.copy(radecToVec(202, -44, 68));
+  scBand.group.add(ga);
+  scBand.labels.push({ obj: ga, name:'THE GREAT ATTRACTOR', cls:'dim', pri: 5.5, minZ: 20.3, maxZ: 22.0 });
+}
+
+/* Band 7 — the observable universe (1 unit = 100 Mpc, radius ≈ 46.5 Gly) */
+const uniBand = makeBand(3.0857e21, 21.35, 22.45, 60, 61);
+{
+  const web = filamentCloud(137, 320, 42000, 0xfff0e0, 0xd8c8ff, true);
+  uniBand.group.add(web); uniBand.fade(web.material, 0.85);
+  /* the CMB — the wall at the edge of the visible */
+  const CN = 3400, cp = new Float32Array(CN*3), cc = new Float32Array(CN*3), cs = new Float32Array(CN);
+  for (let i = 0; i < CN; i++) {
+    const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+    cp[i*3] = 137*s2*Math.cos(th); cp[i*3+1] = 137*u; cp[i*3+2] = 137*s2*Math.sin(th);
+    const f = 0.3 + Math.random()*0.45;
+    cc[i*3] = f; cc[i*3+1] = f*0.62; cc[i*3+2] = f*0.42;
+    cs[i] = 1.1 + Math.random()*1.0;
+  }
+  const cmb = makePoints(cp, cc, cs, 0.7);
+  uniBand.group.add(cmb); uniBand.fade(cmb.material, 0.7);
+  const cmbObj = new THREE.Object3D(); cmbObj.position.set(0, 96, 95);
+  uniBand.group.add(cmbObj);
+  uniBand.labels.push({ obj: cmbObj, name:'COSMIC MICROWAVE BACKGROUND · THE EDGE OF THE VISIBLE',
+    cls:'dim', pri: 7, minZ: 23.1, maxZ: 24.3 });
 }
 
 /* ========================== BACKDROP · NIGHT SKY ========================== */
@@ -1080,10 +1356,16 @@ const POOL_N = 34, pool = [];
 for (let i = 0; i < POOL_N; i++) {
   const d = document.createElement('div');
   d.className = 'olabel'; d.style.display = 'none';
-  d.addEventListener('click', e => {
-    e.stopPropagation();
+  /* pointerdown, not click: the pool reassigns labels every frame, so by
+     mouse-up the div under the cursor may hold a different label and the
+     click never fires. Acting on the down event makes every label reliable. */
+  d.addEventListener('pointerdown', e => {
+    e.stopPropagation(); e.preventDefault();
     const L = d._L;
-    if (L && L.star) flyTo(L.star === 'SOL' ? 'SOL' : L.star);
+    if (!L) return;
+    if (L.star) { flyTo(L.star === 'SOL' ? 'SOL' : L.star); return; }
+    if (L.planet) { focusPlanetObj(L.obj, L.planet.rkm, L.name); return; }
+    if (L.zoomTo) { cancelTour(); clearFocus(); zoomT = L.zoomTo; }
   });
   document.body.appendChild(d); pool.push(d);
 }
@@ -1119,10 +1401,32 @@ function updateLabels() {
     d.style.opacity = c.a.toFixed(2);
     d.className = 'olabel ' + (c.L.cls || '');
     d.innerHTML = c.L.name + (c.L.badge ? `<span class="pl">⟡ ${c.L.badge} planet${c.L.badge>1?'s':''}</span>` : '');
-    d.style.cursor = c.L.star ? 'pointer' : 'default';
+    d.style.cursor = (c.L.star || c.L.planet || c.L.zoomTo) ? 'pointer' : 'default';
     d._L = c.L;
   }
   for (let i = n; i < POOL_N; i++) pool[i].style.display = 'none';
+}
+
+/* ============================ PLANET FOCUS ================================ */
+/* Pin any planet (Sol or exo) to the centre and let the zoom ride all the
+   way down to its surface. Auto-releases when you pull back out to system
+   scale, so the star recentres and the band crossfades stay seamless.      */
+let focusPlanet = null, zoomFloor = ZMIN, focusCapT = 0;
+function clearFocus() {
+  focusPlanet = null; zoomFloor = ZMIN;
+  sysBand.zIn0 = 6.25; sysBand.zIn1 = 6.95;
+}
+function focusPlanetObj(holder, rkm, name) {
+  cancelTour();
+  focusPlanet = holder;
+  const isEarth = holder === sysState.earthHolder || holder === earth;
+  zoomFloor = isEarth ? ZMIN : Math.max(ZMIN, Math.log10(rkm*2.55));
+  if (!isEarth && holder !== moon) { sysBand.zIn0 = 3.5; sysBand.zIn1 = 3.6; }  // keep the band live at surface zoom
+  const zTarget = clamp(Math.log10(rkm*3.2), zoomFloor, 10.3);
+  if (flight) flight.zArr = zTarget; else zoomT = zTarget;
+  setCaption(name, 'SCROLL TO APPROACH THE SURFACE · ESC TO RELEASE', true);
+  clearTimeout(focusCapT);
+  focusCapT = setTimeout(() => { if (!tour) setCaption('', '', false); }, 2800);
 }
 
 /* ============================== FLY TO STAR =============================== */
@@ -1131,6 +1435,7 @@ const STAR_RADII_AU = { 0:0.0011, 1:0.00465, 2:0.0093, 3:0.14, 4:3.2 };
 
 function flyTo(rec, arriveZ) {
   cancelTour();
+  clearFocus();
   hideCard();
   const isSol = rec === 'SOL';
   const sameAnchor = isSol ? anchorName === 'SOL' : anchorName === rec[0];
@@ -1218,15 +1523,18 @@ const TOUR = [
   { z: 13.72, h: 2.6, c: 'The nearest star: 4.2 light-years.',               s: 'PROXIMA CENTAURI · OUR FASTEST PROBE WOULD NEED 73,000 YEARS' },
   { z: 15.05, h: 2.4, c: 'Every star you have ever seen with your eyes lives inside this bubble.', s: '' },
   { z: 17.96, h: 3.0, c: 'The Milky Way. 100,000 light-years. 400 billion suns.', s: 'YOU ARE HERE' },
-  { z: 19.74, h: 3.6, c: 'The Local Group.',                                 s: 'ANDROMEDA · 2.5 MILLION LIGHT-YEARS · ARRIVING IN 4.5 BILLION YEARS' },
-  { z: 19.74, h: 4.0, c: 'Built from a single prompt by Claude Fable 5.',    s: 'SCROLL TO EXPLORE · CLICK ANY STAR TO VISIT IT' },
+  { z: 19.74, h: 3.0, c: 'The Local Group.',                                 s: 'ANDROMEDA · 2.5 MILLION LIGHT-YEARS · ARRIVING IN 4.5 BILLION YEARS' },
+  { z: 21.15, h: 2.8, c: 'Galaxies gather along filaments of dark matter.',  s: 'THE VIRGO SUPERCLUSTER · LANIAKEA' },
+  { z: 23.92, h: 4.4, c: 'The observable universe. Two trillion galaxies.',  s: '93 BILLION LIGHT-YEARS · EVERYTHING WE CAN EVER SEE' },
+  { z: 23.92, h: 4.2, c: 'Built from a single prompt by Claude Fable 5.',    s: 'SCROLL TO EXPLORE · CLICK ANY STAR TO VISIT IT' },
 ];
 let tour = null;
 function startTour() {
   if (anchorName !== 'SOL') {            // hard reset home for a clean take
     buildSystem(null); anchorName = 'SOL'; starsAnchor.set(0,0,0);
   }
-  hideCard(); flight = null;
+  if (music.mode === 0 && !music.userOff) setMusic(2);   // default score: DRIFT
+  clearFocus(); hideCard(); flight = null;
   zoom = zoomT = TOUR[0].z;              // jump-cut straight to the opening frame
   yaw = yawT = 0.62; pitch = pitchT = 0.18;
   tour = { i: 0, phase: 'hold', t: 0, zFrom: zoomT, dur: 1 };
@@ -1263,19 +1571,130 @@ document.getElementById('homeBtn').onclick = () => flyTo('SOL', 4.6);
 
 /* =============================== LADDER =================================== */
 const TICKS = [['EARTH',4.32],['THE MOON',5.66],['SOLAR SYSTEM',9.9],
-               ['NEAREST STARS',13.72],['MILKY WAY',17.96],['LOCAL GROUP',19.74]];
+               ['NEAREST STARS',13.72],['MILKY WAY',17.96],['LOCAL GROUP',19.74],
+               ['SUPERCLUSTERS',21.15],['THE UNIVERSE',23.92]];
 const trackEl = document.getElementById('ladderTrack');
 const dotEl = document.getElementById('ladderDot');
+function gotoStop(z) {
+  cancelTour();
+  if (anchorName !== 'SOL' && z < 11) { flyTo('SOL', z); return; }
+  clearFocus();
+  if (z < 4.8 && sysState.earthHolder) {           // Earth stop
+    focusPlanetObj(sysState.earthHolder, 6371, 'EARTH');
+  } else if (z < 6.3) {                             // Moon stop — pin the Moon itself
+    focusPlanetObj(moon, 1737, 'THE MOON');
+    zoomT = 4.55; return;
+  }
+  zoomT = z;
+}
 const tickEls = TICKS.map(([name, z]) => {
   const d = document.createElement('div');
   d.className = 'tick'; d.textContent = name;
   d.style.top = ((1 - (z - ZMIN)/(ZMAX - ZMIN)) * 100) + '%';
-  d.onclick = () => { cancelTour();
-    if (anchorName !== 'SOL' && z < 11) flyTo('SOL', z); else zoomT = z; };
+  d.onclick = () => gotoStop(z);
   trackEl.appendChild(d); return { d, z };
 });
 
+/* ====================== COMMAND PALETTE (⌘K / CTRL+K) ===================== */
+const paletteEl = document.getElementById('palette');
+const palInput = document.getElementById('palInput');
+const palList = document.getElementById('palList');
+const PAL = [];
+PAL.push({ t:'▶ Play the Journey', s:'60-SECOND CINEMATIC TOUR', g:'ACTIONS', fn: () => startTour() });
+PAL.push({ t:'♫ Music', s:'CYCLE · OFF / EPIC / DRIFT', g:'ACTIONS', fn: () => cycleMusic() });
+TICKS.forEach(([name, z]) => PAL.push({ t:name, s:'SCALE STOP', g:'PLACES',
+  fn: () => gotoStop(z) }));
+SOL_PLANETS.forEach(p => PAL.push({ t:p.name, s:`PLANET · ${p.a} AU · CENTER & LAND`, g:'OUR SOLAR SYSTEM',
+  fn: () => {
+    if (anchorName !== 'SOL') flyTo('SOL');
+    const rec = sysState.planets.find(x => x.name === p.name);
+    if (rec) focusPlanetObj(rec.holder, p.r, p.name);
+  } }));
+PAL.push({ t:'VOYAGER 1', s:'FARTHEST HUMAN-MADE OBJECT · 168 AU', g:'OUR SOLAR SYSTEM',
+  fn: () => flyTo('SOL', 10.5) });
+STARS.forEach(rec => PAL.push({ t:rec[0],
+  s:`${rec[4]}-CLASS · ${rec[1].toLocaleString(undefined,{maximumSignificantDigits:3})} LY` +
+    (EXO[rec[0]] ? ` · ⟡ ${EXO[rec[0]].length} PLANETS` : ''),
+  g:'STARS', feat: !!EXO[rec[0]], fn: () => flyTo(rec) }));
+GALAXIES.forEach(grec => PAL.push({ t:grec[0],
+  s:'GALAXY · ' + (grec[3] >= 150 ? (grec[3]*3.262/1000).toFixed(1)+' MLY' : grec[3]+' KPC'),
+  g:'GALAXIES',
+  fn: () => { cancelTour();
+    if (anchorName !== 'SOL') flyTo('SOL', 19.5); else zoomT = 19.5;
+    setCaption(grec[0], grec[6] || 'LOCAL GROUP GALAXY', true);
+    setTimeout(() => { if (!tour) setCaption('', '', false); }, 3400); } }));
+
+function randomDest() {
+  const pool = PAL.filter(e => e.g !== 'ACTIONS');
+  pool[(Math.random()*pool.length)|0].fn();
+}
+PAL.unshift({ t:'🎲 Random destination', s:'ROLL THE DICE', g:'ACTIONS', fn: () => randomDest() });
+
+let palSel = 0, palItems = [];
+function palRender() {
+  const q = palInput.value.trim().toLowerCase();
+  if (!q) palItems = PAL.filter(e => e.g === 'ACTIONS' || e.g === 'PLACES' || e.feat).slice(0, 26);
+  else {
+    const score = e => { const t = e.t.toLowerCase();
+      return t === q ? 0 : t.startsWith(q) ? 1 : t.includes(q) ? 2
+        : e.s.toLowerCase().includes(q) ? 3 : 9; };
+    palItems = PAL.map(e => [score(e), e]).filter(x => x[0] < 9)
+      .sort((a, b) => a[0] - b[0]).slice(0, 18).map(x => x[1]);
+  }
+  palSel = Math.max(0, Math.min(palSel, palItems.length - 1));
+  let html = '', lastG = '';
+  palItems.forEach((e, i) => {
+    if (e.g !== lastG) { html += `<div class="pgroup">${e.g}</div>`; lastG = e.g; }
+    html += `<div class="prow${i === palSel ? ' sel' : ''}" data-i="${i}">` +
+            `<span class="pt">${e.t.toUpperCase()}</span><span class="ps">${e.s}</span></div>`;
+  });
+  palList.innerHTML = html || '<div class="pgroup">NO MATCHES</div>';
+  const sel = palList.querySelector('.prow.sel');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+}
+function openPal() { paletteEl.classList.add('open'); palInput.value = ''; palSel = 0;
+  palRender(); setTimeout(() => palInput.focus(), 30); }
+function closePal() { paletteEl.classList.remove('open'); palInput.blur(); }
+function togglePal() { paletteEl.classList.contains('open') ? closePal() : openPal(); }
+function palExec(i) { const e = palItems[i]; if (!e) return; closePal(); e.fn(); }
+palInput.addEventListener('input', () => { palSel = 0; palRender(); });
+palInput.addEventListener('keydown', e => {
+  e.stopPropagation();
+  if (e.code === 'ArrowDown') { e.preventDefault(); palSel++; palRender(); }
+  else if (e.code === 'ArrowUp') { e.preventDefault(); palSel--; if (palSel < 0) palSel = 0; palRender(); }
+  else if (e.code === 'Enter') palExec(palSel);
+  else if (e.code === 'Escape') closePal();
+  else if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK') { e.preventDefault(); closePal(); }
+});
+palList.addEventListener('pointerdown', e => {
+  const row = e.target.closest('.prow');
+  if (row) palExec(+row.dataset.i);
+});
+paletteEl.addEventListener('pointerdown', e => { if (e.target === paletteEl) closePal(); });
+document.getElementById('palBtn').onclick = togglePal;
+
 /* ============================== CONTROLS ================================== */
+/* time control — real relative orbital speeds, scaled. Cycles like music. */
+const TIME_MODES = [[1,'1×'],[2,'2×'],[10,'10×'],[0,'PAUSED'],[0.2,'0.2×']];
+let timeMode = 0, lastLiveMode = 0, timeCapT = 0;
+function setTimeMode(i) {
+  timeMode = ((i % TIME_MODES.length) + TIME_MODES.length) % TIME_MODES.length;
+  const [mult, name] = TIME_MODES[timeMode];
+  if (mult !== 0) lastLiveMode = timeMode;
+  document.getElementById('pauseBtn').textContent = mult === 0 ? '▶ PAUSED' : '⏱ ' + name;
+  if (!tour) {
+    setCaption(mult === 0 ? 'Paused' : 'Time ' + name,
+      'REALISTIC MODE · TRUE RELATIVE ORBITAL SPEEDS', true);
+    clearTimeout(timeCapT);
+    timeCapT = setTimeout(() => { if (!tour) setCaption('', '', false); }, 2000);
+  }
+}
+function cycleTime() { setTimeMode(timeMode + 1); }
+function quickPause() {                       // P: snap to pause and back
+  setTimeMode(TIME_MODES[timeMode][0] === 0 ? lastLiveMode : 3);
+}
+document.getElementById('pauseBtn').onclick = cycleTime;
+
 const ptrs = new Map();                 // multi-pointer: 1 = orbit, 2 = pinch zoom
 let pinchD = 0;
 canvas.addEventListener('pointerdown', e => {
@@ -1291,7 +1710,7 @@ canvas.addEventListener('pointermove', e => {
     p.x = e.clientX; p.y = e.clientY;
     const [a, b] = [...ptrs.values()];
     const d = Math.hypot(a.x-b.x, a.y-b.y);
-    if (pinchD > 0) zoomT = clamp(zoomT + (pinchD - d) * 0.011, ZMIN, ZMAX);
+    if (pinchD > 0) zoomT = clamp(zoomT + (pinchD - d) * 0.011, zoomFloor, ZMAX);
     pinchD = d;
   } else {
     yawT -= (e.clientX - p.x) * 0.0042;
@@ -1306,14 +1725,22 @@ function ptrEnd(e) {
 addEventListener('pointerup', ptrEnd);
 addEventListener('pointercancel', ptrEnd);
 addEventListener('wheel', e => {
+  if (e.target.closest && e.target.closest('#palette,#card')) return;  // let menus scroll
   e.preventDefault(); cancelTour();
   const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
-  zoomT = clamp(zoomT + d * 0.0024, ZMIN, ZMAX);
+  zoomT = clamp(zoomT + d * 0.0024, zoomFloor, ZMAX);
 }, { passive: false });
 addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK') { e.preventDefault(); togglePal(); return; }
+  if (paletteEl.classList.contains('open')) { if (e.code === 'Escape') closePal(); return; }
   if (e.code === 'Space') { e.preventDefault(); tour ? endTour() : startTour(); }
-  if (e.code === 'Escape') { if (anchorName !== 'SOL') flyTo('SOL'); else hideCard(); }
-  if (e.code === 'KeyM') setMusic((music.mode + 1) % 3);
+  if (e.code === 'Escape') {
+    if (anchorName !== 'SOL') flyTo('SOL');
+    else { hideCard(); if (focusPlanet) { clearFocus(); zoomT = Math.max(zoomT, 8.6); } }
+  }
+  if (e.code === 'KeyM') cycleMusic();
+  if (e.code === 'KeyP') quickPause();
+  if (e.code === 'KeyR') randomDest();
 });
 setTimeout(() => document.getElementById('hint').style.opacity = 0, 14000);
 
@@ -1329,7 +1756,8 @@ function updateHud() {
   else if (km < KM.AU*0.08) { v = sig(km/1e6);            u = 'million km'; }
   else if (km < KM.ly*0.08) { v = sig(km/KM.AU);          u = 'AU'; }
   else if (km < KM.ly*9e5)  { v = sig(km/KM.ly);          u = 'light-years'; }
-  else                      { v = sig(km/(KM.ly*1e6));    u = 'million light-years'; }
+  else if (km < KM.ly*9e8)  { v = sig(km/(KM.ly*1e6));    u = 'million light-years'; }
+  else                      { v = sig(km/(KM.ly*1e9));    u = 'billion light-years'; }
   valEl.textContent = v; unitEl.textContent = u;
   lblEl.textContent = anchorName === 'SOL' ? 'VIEW SCALE · FROM EARTH' : 'VIEW SCALE · FROM ' + anchorName.toUpperCase();
   const f = clamp((zoom - ZMIN)/(ZMAX - ZMIN), 0, 1);
@@ -1345,9 +1773,12 @@ function updateHud() {
    2 DRIFT — galaxy-map ambience: slow pads, sparse plucked notes, sub drone.
    Drop "cosmos-epic.mp3" / "cosmos-drift.mp3" next to this file to override
    either score with your own track (it will loop automatically).           */
-const MUSIC_NAMES = ['♫ MUSIC OFF', '♫ EPIC SCORE', '♫ DRIFT · AMBIENT'];
-const music = { mode: 0, ctx: null, comp: null, verb: null, bus: null,
-  timers: [], live: [], audioEl: null, custom: { 1: undefined, 2: undefined } };
+const MUSIC_NAMES = ['♫ MUSIC OFF', '♫ EPIC SCORE', '♫ DRIFT · AMBIENT', '♫ TESSERACT · ORGAN'];
+const MUSIC_SUBS = ['', 'ORIGINAL SCORE · GENERATED LIVE', 'ORIGINAL AMBIENT · GENERATED LIVE',
+  'ORIGINAL ORGAN · GENERATED LIVE'];
+const MUSIC_FILES = ['', 'cosmos-epic.mp3', 'cosmos-drift.mp3', 'cosmos-tesseract.mp3'];
+const music = { mode: 0, ctx: null, comp: null, verb: null, bus: null, userOff: false,
+  timers: [], live: [], audioEl: null, custom: { 1: undefined, 2: undefined, 3: undefined } };
 const mf = m => 440 * Math.pow(2, (m - 69) / 12);   // midi → Hz
 
 function audioCtx() {
@@ -1513,10 +1944,56 @@ function startDrift() {
   music.timers.push(setTimeout(pluck, 1800));
 }
 
+/* --- 3 · TESSERACT (organ ostinato, ticking clock, long swells) ----------- */
+function startTesseract() {
+  const ctx = audioCtx(), bus = newBus();
+  const BEAT = 0.42;
+  const PAT = [0, 7, 12, 16, 12, 7];                  // original ostinato figure
+  const CHORDS = [57, 53, 48, 55];                    // Am · F · C · G roots
+  const STEPS_PER_CHORD = 24;
+  let nextT = ctx.currentTime + 0.1, step = 0;
+  function organ(t, midi, dur, vol) {
+    for (const [mult, type, v] of [[1,'sine',1],[2,'sine',0.55],[3,'triangle',0.22],[1.004,'sine',0.4]]) {
+      const o = osc(ctx, type, mf(midi)*mult, 0, t, t+dur+0.25);
+      const g = env(ctx, t, 0.012, Math.max(0.002, vol*v*0.105), dur+0.18, 0.1);
+      o.connect(g); g.connect(bus);
+    }
+  }
+  function tick(t) {
+    const b = ctx.createBuffer(1, (ctx.sampleRate*0.03)|0, ctx.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1)*(1-i/d.length);
+    const s = ctx.createBufferSource(); s.buffer = b;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4200;
+    const g = ctx.createGain(); g.gain.value = 0.06;
+    s.connect(hp); hp.connect(g); g.connect(bus); s.start(t);
+  }
+  function pedal(t, midi, dur) {
+    const o = osc(ctx, 'sawtooth', mf(midi), 0, t, t+dur+0.7);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+    const g = env(ctx, t, 0.8, 0.15, dur+0.6, 0.7);
+    o.connect(lp); lp.connect(g); g.connect(bus);
+  }
+  const iv = setInterval(() => {
+    if (!music.bus) return;
+    while (nextT < ctx.currentTime + 2.2) {
+      const chord = CHORDS[Math.floor(step/STEPS_PER_CHORD) % CHORDS.length];
+      const s6 = step % 6;
+      if (step % STEPS_PER_CHORD === 0) pedal(nextT, chord-24, STEPS_PER_CHORD*BEAT);
+      const dyn = 0.5 + 0.5*Math.sin(((step % 96)/96)*Math.PI);   // 40-second arc
+      organ(nextT, chord + PAT[s6], BEAT*1.05, dyn);
+      if (s6 === 0) organ(nextT, chord + 24, BEAT*6, dyn*0.45);   // held top voice
+      if (step % 8 === 0) tick(nextT);
+      nextT += BEAT; step++;
+    }
+  }, 300);
+  music.timers.push(iv);
+}
+
 /* --- mode switch / custom-file override ----------------------------------- */
 function tryCustomTrack(mode, cb) {
   if (music.custom[mode] !== undefined) return cb(music.custom[mode]);
-  const a = new Audio(mode === 1 ? 'cosmos-epic.mp3' : 'cosmos-drift.mp3');
+  const a = new Audio(MUSIC_FILES[mode]);
   a.loop = true; a.volume = 0.55;
   a.addEventListener('canplaythrough', () => { music.custom[mode] = a; cb(a); }, { once: true });
   a.addEventListener('error', () => { music.custom[mode] = null; cb(null); }, { once: true });
@@ -1529,12 +2006,17 @@ function setMusic(mode) {
   tryCustomTrack(mode, el => {
     if (music.mode !== mode) return;
     if (el) { music.audioEl = el; el.currentTime = 0; el.play(); }
-    else mode === 1 ? startEpic() : startDrift();
+    else (mode === 1 ? startEpic : mode === 2 ? startDrift : startTesseract)();
   });
-  if (!tour) { setCaption(MUSIC_NAMES[mode], mode === 1 ? 'ORIGINAL SCORE · GENERATED LIVE' : 'ORIGINAL AMBIENT · GENERATED LIVE', true);
+  if (!tour) { setCaption(MUSIC_NAMES[mode], MUSIC_SUBS[mode], true);
     setTimeout(() => { if (!tour) setCaption('', '', false); }, 2200); }
 }
-document.getElementById('musicBtn').onclick = () => setMusic((music.mode + 1) % 3);
+function cycleMusic() {
+  const next = (music.mode + 1) % 4;
+  music.userOff = next === 0;            // remember an explicit OFF
+  setMusic(next);
+}
+document.getElementById('musicBtn').onclick = cycleMusic;
 
 /* ============================== MAIN LOOP ================================= */
 function resize() {
@@ -1560,9 +2042,15 @@ let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min((now - last)/1000, 0.05); last = now;
-  simYears += dt / 75;                       // 75 s per Earth year
+  frameDT = dt;
+  const adt = dt * TIME_MODES[timeMode][0];  // time control scales all celestial motion
+  if (!focusPlanet) simYears += adt / 75;    // orbits also pause while you stand on a world
 
   stepTour(dt); stepFlight(dt);
+  /* release only when BOTH actual and target zoom are pulling out — diving
+     in from far away must not strip the focus mid-flight */
+  if (focusPlanet && zoom > 9.3 && zoomT > 9.0) clearFocus();
+  zoomT = clamp(zoomT, zoomFloor, ZMAX);
 
   zoom  += (zoomT  - zoom)  * Math.min(1, dt*4.2);
   yaw   += (yawT   - yaw)   * Math.min(1, dt*6);
@@ -1570,15 +2058,18 @@ function frame(now) {
   placeCamera();
 
   /* motion */
-  earth.rotation.y += dt*0.05;
-  clouds.rotation.y += dt*0.058;
-  cloudMat.uniforms.uT.value += dt;
+  earth.rotation.y += adt*0.05;
+  clouds.rotation.y += adt*0.058;
+  cloudMat.uniforms.uT.value += adt;
   moonPivot.rotation.y = simYears/0.0748 * 6.28318;
   for (const p of sysState.planets) p.pivot.rotation.y = p.phase + simYears/p.period * 6.28318;
-  mw.rotateY(-dt*0.002);
+  mw.rotateY(-adt*0.002);
 
   for (const b of BANDS) b.update(zoom);
   if (anchorName !== 'SOL') earthBand.group.visible = false;
+  eDot.material.uniforms.uOpacity.value = earthBand.alpha * smooth(5.35, 6.1, zoom) * 0.95;
+  mDot.material.uniforms.uOpacity.value = earthBand.alpha * smooth(5.7, 6.3, zoom)
+    * (1 - smooth(7.0, 7.8, zoom)) * 0.8;
   SKY.material.uniforms.uOpacity.value = 0.85 * (1 - smooth(10.8, 12.8, zoom)) * smooth(3.9, 4.4, zoom);
 
   updateLabels(); updateHud();
