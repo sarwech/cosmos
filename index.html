@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COSMOS — Earth to the Local Group</title>
-<meta property="og:title" content="COSMOS — Earth to the Local Group">
-<meta property="og:description" content="A real-data Powers of Ten: one scroll wheel, 20 orders of magnitude, from Earth's surface to the edge of the observable universe. Real stars, real exoplanets you can fly to. Built by Claude Fable 5 from a single prompt.">
+<title>COSMOS — the Planck Length to the Edge of the Universe</title>
+<meta property="og:title" content="COSMOS — the Planck Length to the Edge of the Universe">
+<meta property="og:description" content="A real-data Powers of Ten: one scroll wheel, 61 orders of magnitude, from the quantum foam to the cosmic microwave background. Real stars, live NASA exoplanet data, planets where they really are tonight. Built by Claude Fable 5.">
 <meta name="twitter:card" content="summary_large_image">
-<!-- after deploying, screenshot the galaxy view, save as preview.png in the repo, then uncomment:
-<meta property="og:image" content="https://YOUR-PAGES-URL/preview.png"> -->
+<!-- press S in the app to save a screenshot, commit it as preview.png; for best
+     results replace this with the absolute URL of your deployed page -->
+<meta property="og:image" content="preview.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23060b14'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%237fb4ff'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%233e568a' stroke-width='2'/%3E%3C/svg%3E">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { width:100%; height:100%; overflow:hidden; background:#000; }
@@ -33,7 +35,7 @@
 
   /* ---- right scale ladder ---- */
   #ladder { position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:10; }
-  #ladder .track { position:relative; width:2px; height:min(52vh,430px); margin:0 auto;
+  #ladder .track { position:relative; width:2px; height:min(60vh,520px); margin:0 auto;
     background:linear-gradient(#1c2736, #2a3a52, #1c2736); border-radius:2px; }
   #ladder .dot { position:absolute; left:50%; width:9px; height:9px; border-radius:50%;
     background:#7fb4ff; transform:translate(-50%,-50%); box-shadow:0 0 12px #7fb4ff, 0 0 4px #fff;
@@ -136,7 +138,7 @@
 
 <div id="title">
   <h1>C O S M O S</h1>
-  <p>EARTH&nbsp;&nbsp;→&nbsp;&nbsp;THE LOCAL GROUP</p>
+  <p>THE PLANCK LENGTH&nbsp;&nbsp;→&nbsp;&nbsp;THE COSMIC HORIZON</p>
 </div>
 
 <div id="scaleHud">
@@ -147,9 +149,9 @@
 <div id="ladder"><div class="track" id="ladderTrack"><div class="dot" id="ladderDot"></div></div></div>
 
 <div id="hint">
-  <b>SCROLL</b> &nbsp;zoom through 20 orders of magnitude<br>
-  <b>DRAG</b> &nbsp;look around &nbsp;&nbsp; <b>CLICK A STAR</b> &nbsp;fly to it<br>
-  <b>SPACE</b> &nbsp;journey &nbsp;&nbsp; <b>M</b> &nbsp;music &nbsp;&nbsp; <b>P</b> &nbsp;pause &nbsp;&nbsp; <b>R</b> &nbsp;random &nbsp;&nbsp; <b>⌘K</b> &nbsp;explore
+  <b>SCROLL</b> &nbsp;zoom through 61 orders of magnitude — both ways<br>
+  <b>DRAG</b> &nbsp;look around &nbsp;&nbsp; <b>CLICK A STAR</b> &nbsp;fly to it &nbsp;&nbsp; <b>S</b> &nbsp;photo<br>
+  <b>SPACE</b> &nbsp;journey &nbsp;&nbsp; <b>M</b> &nbsp;music &nbsp;&nbsp; <b>P</b> &nbsp;pause &nbsp;&nbsp; <b>R</b> &nbsp;random &nbsp;&nbsp; <b id="modkHint">⌘K</b> &nbsp;explore
 </div>
 
 <div id="caption"></div>
@@ -174,20 +176,25 @@
   <div id="cardRows"></div>
 </div>
 
-<div id="credit">REAL STAR &amp; EXOPLANET DATA (CURATED FROM HIPPARCOS / NASA EXOPLANET ARCHIVE) · RENDERED LIVE IN WEBGL</div>
+<div id="credit">REAL STAR &amp; EXOPLANET DATA (HIPPARCOS · LIVE NASA EXOPLANET ARCHIVE WHEN ONLINE) · RENDERED LIVE IN WEBGL</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>/* fallback CDN if the pinned copy is unreachable or fails its integrity check */
+if (!window.THREE) document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');</script>
 <script>
 'use strict';
 /* ============================================================================
-   COSMOS — a continuous zoom from Earth's surface to the Local Group.
-   One self-contained file. Built by Claude Fable 5.
+   COSMOS — a continuous zoom from the Planck length to the observable
+   universe. One self-contained file. Built by Claude Fable 5.
 
-   Technique: the camera never moves. The universe is organised into "bands"
-   (Earth, star system, stellar neighbourhood, galaxy, local group), each with
-   its own unit system. Every frame each band is rescaled by
+   Technique: the camera never moves. Reality is organised into "bands"
+   (quantum foam, proton, atom, cell … Earth, star system, galaxy, local
+   group, cosmic web), each with its own unit system. Every frame each band
+   is rescaled by
        scale = CAMD * kmPerUnit / 10^zoom
-   so a single scroll axis sweeps ~16 orders of magnitude without ever
+   so a single scroll axis sweeps ~61 orders of magnitude without ever
    touching floating-point precision limits. Bands crossfade at the seams and
    their origins drift (Earth→Sun→Galactic Centre→Local-Group centroid) so the
    frame always recentres on the next-larger structure, Powers-of-Ten style.
@@ -195,26 +202,42 @@
 
 const KM = { Re:6371, moon:384400, AU:1.496e8, ly:9.4607e12, pc:3.0857e13, kpc:3.0857e16 };
 const CAMD = 600;                          // fixed camera distance (scene units)
-const ZMIN = 3.82, ZMAX = 24.02;           // zoom = log10(km) of the view scale
+const ZMIN = -37.9, ZMAX = 24.02;          // zoom = log10(km): Planck length → CMB
+const Z_SURF = 3.80;                       // Earth's surface — the gate to the descent
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '');
+const MODK = IS_MAC ? '⌘K' : 'CTRL+K';
 
 /* ----------------------------- SOLAR SYSTEM ------------------------------ */
-/* a: AU, period: years, r: km, day: rotation for flavour */
+/* a: AU, period: years, r: km.
+   el: J2000 Keplerian elements [e, i°, Ω°, ϖ°, L₀°] (Standish, 1800–2050) —
+   the planets are drawn where they REALLY are today, eccentricity,
+   inclination and all. */
 const SOL_PLANETS = [
-  { name:'MERCURY', a:0.387,  p:0.241,  r:2440,  col:0xb5a79b, tex:'rock' },
-  { name:'VENUS',   a:0.723,  p:0.615,  r:6052,  col:0xe6c89c, tex:'venus' },
-  { name:'EARTH',   a:1.000,  p:1.000,  r:6371,  col:0x6b93d6, earth:true, tex:'rock' },
-  { name:'MARS',    a:1.524,  p:1.881,  r:3390,  col:0xc1593c, tex:'mars',
+  { name:'MERCURY', a:0.38710, p:0.241,  r:2440,  col:0xb5a79b, tex:'rock',
+    el:[0.20564, 7.005,  48.331, 77.457, 252.251] },
+  { name:'VENUS',   a:0.72333, p:0.615,  r:6052,  col:0xe6c89c, tex:'venus',
+    el:[0.00678, 3.395,  76.680, 131.564, 181.980] },
+  { name:'EARTH',   a:1.00000, p:1.000,  r:6371,  col:0x6b93d6, earth:true, tex:'rock',
+    el:[0.01671, 0.0,     0.0,   102.937, 100.464] },
+  { name:'MARS',    a:1.52371, p:1.881,  r:3390,  col:0xc1593c, tex:'mars',
+    el:[0.09339, 1.850,  49.559, 336.057, 355.447],
     moons:[['PHOBOS',9376,11,0.319],['DEIMOS',23463,6,1.262]] },
-  { name:'JUPITER', a:5.203,  p:11.86,  r:69911, col:0xd8b98a, tex:'jupiter',
+  { name:'JUPITER', a:5.20289, p:11.86,  r:69911, col:0xd8b98a, tex:'jupiter',
+    el:[0.04839, 1.304, 100.474, 14.728, 34.397],
     moons:[['IO',421800,1822,1.769,0xd8c873],['EUROPA',671100,1561,3.551,0xcfc8b8],
            ['GANYMEDE',1070400,2634,7.155,0xa89888],['CALLISTO',1882700,2410,16.69,0x8a7f74]] },
-  { name:'SATURN',  a:9.537,  p:29.45,  r:58232, col:0xe3d1a8, ring:true, tex:'gas',
+  { name:'SATURN',  a:9.53668, p:29.45,  r:58232, col:0xe3d1a8, ring:true, tex:'gas',
+    el:[0.05386, 2.486, 113.666, 92.599, 49.954],
     moons:[['TITAN',1221900,2575,15.95,0xd8a86a],['ENCELADUS',238040,252,1.37,0xeef0f2]] },
-  { name:'URANUS',  a:19.19,  p:84.02,  r:25362, col:0x9bd4d6, tex:'ice',
+  { name:'URANUS',  a:19.18916, p:84.02, r:25362, col:0x9bd4d6, tex:'ice',
+    el:[0.04726, 0.773,  74.017, 170.954, 313.238],
     moons:[['TITANIA',435900,789,8.706,0x9a9aa0]] },
-  { name:'NEPTUNE', a:30.07,  p:164.8,  r:24622, col:0x4d6fd1, tex:'ice',
+  { name:'NEPTUNE', a:30.06992, p:164.8, r:24622, col:0x4d6fd1, tex:'ice',
+    el:[0.00859, 1.770, 131.784, 44.965, 304.880],
     moons:[['TRITON',354760,1353,-5.877,0xc8d0d8]] },          // retrograde — orbits backwards
-  { name:'PLUTO',   a:39.48,  p:248.1,  r:1188,  col:0xc9b59e, dwarf:true, tex:'rock',
+  { name:'PLUTO',   a:39.48,   p:248.1,  r:1188,  col:0xc9b59e, dwarf:true, tex:'rock',
+    el:[0.24883, 17.140, 110.307, 224.069, 238.929],
     moons:[['CHARON',19591,606,6.387,0xb0a8a0]] },
 ];
 
@@ -387,6 +410,26 @@ const GALAXIES = [
  ['WLM',                      0.49,-15.46, 933.0, 1.0, 2,'Lonely galaxy at the edge'],
 ];
 
+/* --------------------------- DEEP-SKY OBJECTS -----------------------------
+   [name, RA, Dec, dist(ly), radius(ly), type, note]
+   type: 0 emission nebula · 1 planetary nebula · 2 open cluster ·
+         3 globular cluster · 4 supernova remnant --------------------------- */
+const DSOS = [
+ ['Orion Nebula',    83.82, -5.39,  1344,  12, 0,'Stellar nursery — the nearest massive star factory'],
+ ['Pleiades',        56.75, 24.12,   444,   8, 2,'The Seven Sisters · a cluster of newborn suns'],
+ ['Hyades',          66.75, 15.87,   153,  10, 2,'Nearest open cluster · the face of the bull'],
+ ['Beehive Cluster',130.10, 19.67,   577,   7, 2,'M44 · known since antiquity'],
+ ['Double Cluster',  35.60, 57.13,  7500,  35, 2,'Twin clusters in Perseus'],
+ ['Carina Nebula',  161.27,-59.87,  8500, 115, 0,'Home of the doomed giant Eta Carinae'],
+ ['Eagle Nebula',   274.70,-13.81,  5700,  35, 0,'The Pillars of Creation'],
+ ['Lagoon Nebula',  270.90,-24.38,  4100,  55, 0,'Glowing hydrogen in Sagittarius'],
+ ['Crab Nebula',     83.63, 22.01,  6500, 5.5, 4,'Wreck of the supernova witnessed in 1054 AD'],
+ ['Ring Nebula',    283.40, 33.03,  2570, 1.3, 1,'A dying sun-like star shedding its skin'],
+ ['Helix Nebula',   337.41,-20.84,   655, 2.9, 1,'The nearest planetary nebula — our own future'],
+ ['Omega Centauri', 201.70,-47.48, 17090,  86, 3,'Ten million ancient stars'],
+ ['Hercules Cluster',250.42,36.46, 22200,  84, 3,'M13 · target of the 1974 Arecibo message'],
+];
+
 /* ------------------------------ MATH HELPERS ----------------------------- */
 const DEG = Math.PI/180;
 function radecToVec(ra, dec, d) {   // equatorial J2000 → cartesian (y = north)
@@ -397,6 +440,25 @@ const lerp = (a,b,t)=>a+(b-a)*t;
 const clamp = (v,a,b)=>v<a?a:(v>b?b:v);
 const smooth = (a,b,v)=>{ const t = clamp((v-a)/(b-a),0,1); return t*t*(3-2*t); };
 const easeIO = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+
+/* Kepler: heliocentric position from J2000 mean elements, so the solar
+   system shows TODAY's actual configuration. tYr = Julian years since J2000. */
+const OBLIQ = 23.4393*DEG;                 // obliquity: ecliptic → equatorial
+const epochYears = (Date.now() - Date.UTC(2000, 0, 1, 12)) / 31557600000;
+function keplerPos(a, el, period, tYr, out) {
+  const M = (el[4] - el[3])*DEG + 6.283185307*(tYr/period);   // mean anomaly
+  let E = M;
+  for (let k = 0; k < 6; k++) E -= (E - el[0]*Math.sin(E) - M) / (1 - el[0]*Math.cos(E));
+  const xv = a*(Math.cos(E) - el[0]), yv = a*Math.sqrt(1 - el[0]*el[0])*Math.sin(E);
+  const w = (el[3]-el[2])*DEG, i = el[1]*DEG, O = el[2]*DEG;
+  const cw = Math.cos(w), sw = Math.sin(w), ci = Math.cos(i), si = Math.sin(i),
+        cO = Math.cos(O), sO = Math.sin(O);
+  const X = (cO*cw - sO*sw*ci)*xv + (-cO*sw - sO*cw*ci)*yv;   // ecliptic frame
+  const Y = (sO*cw + cO*sw*ci)*xv + (-sO*sw + cO*cw*ci)*yv;
+  const Z = (sw*si)*xv + (cw*si)*yv;
+  const ce = Math.cos(OBLIQ), se = Math.sin(OBLIQ);
+  return out.set(X, Y*se + Z*ce, -(Y*ce - Z*se));             // → scene (y = north)
+}
 
 /* Galactic orientation: real basis so the Milky Way disk matches the real sky */
 const GAL_POLE   = radecToVec(192.86, 27.13, 1).normalize();   // galactic north
@@ -410,7 +472,6 @@ const GAL_M = new THREE.Matrix4().makeBasis(galX, galY, galZ);  // galactic → 
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-const DPR = Math.min(devicePixelRatio, 2);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2e7);
 
@@ -828,13 +889,13 @@ function buildSystem(starRec) {
   /* planets */
   const list = isSol
     ? SOL_PLANETS.map(p => ({ name: p.name, a: p.a, p: p.p, rkm: p.r, col: p.col,
-        ring: p.ring, earth: p.earth, dwarf: p.dwarf, tex: p.tex, moons: p.moons }))
+        ring: p.ring, earth: p.earth, dwarf: p.dwarf, tex: p.tex, moons: p.moons, el: p.el }))
     : (EXO[starRec[0]] || []).map(e => ({ name: e[0].toUpperCase(), a: e[1],
         rkm: e[2]*6371, p: e[3]/365.25, col: KIND_COL[e[4]], kind: e[4], tex: EXO_TEX[e[4]] }));
 
   for (const pl of list) {
     const pivot = new THREE.Group(); sysBand.group.add(pivot);
-    pivot.rotation.y = Math.random()*6.283;
+    if (!pl.el) pivot.rotation.y = Math.random()*6.283;   // exo: phase unknown — randomise
     const holder = new THREE.Group(); holder.position.set(pl.a, 0, 0); pivot.add(holder);
     holder.userData.sys = true;           // marks it pinnable by the system band
 
@@ -871,9 +932,15 @@ function buildSystem(starRec) {
       dotGeo.attributes.psize.array, 0.95);
     holder.add(dot); sysBand.fade(dot.material, 0.95);
 
-    /* orbit ring */
+    /* orbit ring — the TRUE ellipse (e, i, Ω, ϖ) for our planets */
     const seg = 220, oPos = new Float32Array(seg*3);
-    for (let i = 0; i < seg; i++) {
+    if (pl.el) {
+      const tmp = new THREE.Vector3();
+      for (let i = 0; i < seg; i++) {
+        keplerPos(pl.a, pl.el, 1, i/seg, tmp);     // period 1, t 0→1 sweeps the orbit
+        oPos[i*3] = tmp.x; oPos[i*3+1] = tmp.y; oPos[i*3+2] = tmp.z;
+      }
+    } else for (let i = 0; i < seg; i++) {
       const a = i/seg*6.28318;
       oPos[i*3] = Math.cos(a)*pl.a; oPos[i*3+2] = Math.sin(a)*pl.a;
     }
@@ -885,7 +952,7 @@ function buildSystem(starRec) {
     sysBand.labels.push({ obj: holder, name: pl.name, cls: 'dim', pri: pl.earth?8:4,
       minZ: 6.5, maxZ: Math.min(10.4, 7.2 + Math.log10(pl.a+1.2)*2.6),
       planet: { a: pl.a, rkm: pl.rkm } });
-    sysState.planets.push({ pivot, holder, period: pl.p, earth: pl.earth,
+    sysState.planets.push({ pivot, holder, period: pl.p, earth: pl.earth, a: pl.a, el: pl.el,
       phase: pivot.rotation.y, name: pl.name, rkm: pl.rkm });
     if (pl.earth) sysState.earthHolder = holder;
 
@@ -1084,6 +1151,84 @@ const STAR_OBJS = [];                                // {rec, pos, anchorObj}
     starsBand.labels.push({ obj: anchor, name: cname, cls: 'dim', pri: 5,
       minZ: 11.2, maxZ: 14.4 });
   }
+}
+
+/* Deep-sky objects — nebulae, clusters and remnants at their real positions.
+   Click a label (or use ⌘K) to fly to them. */
+const DSO_TYPE = ['EMISSION NEBULA','PLANETARY NEBULA','OPEN CLUSTER','GLOBULAR CLUSTER','SUPERNOVA REMNANT'];
+const DSO_OBJS = [];
+for (const rec of DSOS) {
+  const [name, ra, dec, dist, R, type] = rec;
+  const v = radecToVec(ra, dec, dist);
+  const g = new THREE.Group(); g.position.copy(v);
+  g.rotation.set(Math.random()*2, Math.random()*3, Math.random()*2);
+  let N, pos, col, sz;
+  const fill = (n, fn) => {
+    N = n; pos = new Float32Array(N*3); col = new Float32Array(N*3); sz = new Float32Array(N);
+    const p = new THREE.Vector3(), c = new THREE.Color();
+    for (let k = 0; k < N; k++) {
+      fn(p, c, k);
+      pos[k*3] = p.x; pos[k*3+1] = p.y; pos[k*3+2] = p.z;
+      col[k*3] = c.r; col[k*3+1] = c.g; col[k*3+2] = c.b;
+    }
+  };
+  if (type === 0) {              // emission nebula: pink HII, teal OIII, newborn stars
+    const nodes = [];
+    for (let k = 0; k < 5; k++)
+      nodes.push(new THREE.Vector3(gauss(), gauss()*0.7, gauss()).multiplyScalar(R*0.32));
+    const cp = new THREE.Color(0xff9ab4), ct = new THREE.Color(0x7fd8cf), cw = new THREE.Color(0xcfe2ff);
+    fill(Math.min(2600, 600 + R*22|0), (p, c, k) => {
+      const n = nodes[(Math.random()*nodes.length)|0];
+      p.set(gauss(), gauss(), gauss()).multiplyScalar(R*0.30).add(n);
+      const star = Math.random() < 0.06;
+      c.copy(star ? cw : (Math.random() < 0.6 ? cp : ct))
+        .multiplyScalar(star ? 0.9 : 0.18 + Math.random()*0.4);
+      sz[k] = star ? 2.6 : 2.2 + Math.random()*2.6;
+    });
+  } else if (type === 1) {       // planetary nebula: glowing shell + dying core
+    const cs = new THREE.Color(0x8fe8c8), co = new THREE.Color(0xe89ab0);
+    fill(900, (p, c, k) => {
+      const core = k === 0;
+      const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+      const r = core ? 0 : R*(0.78 + Math.random()*0.34);
+      p.set(r*s2*Math.cos(th), r*u*0.72, r*s2*Math.sin(th));
+      c.copy(core ? new THREE.Color(0xffffff) : (Math.random() < 0.75 ? cs : co))
+        .multiplyScalar(core ? 1 : 0.2 + Math.random()*0.45);
+      sz[k] = core ? 3.4 : 1.9 + Math.random()*1.8;
+    });
+  } else if (type === 2) {       // open cluster: a handful of brilliant young suns
+    const cb = new THREE.Color(0xbfd8ff);
+    fill(120 + (R*9|0), (p, c, k) => {
+      p.set(gauss(), gauss(), gauss()).multiplyScalar(R*0.5);
+      c.copy(cb).multiplyScalar(0.45 + Math.random()*0.75);
+      sz[k] = Math.random() < 0.18 ? 3.6 : 1.8 + Math.random()*1.6;
+    });
+  } else if (type === 3) {       // globular: ancient stars, fiercely concentrated
+    const cw2 = new THREE.Color(0xffe8c8);
+    fill(1600, (p, c, k) => {
+      const r = R*Math.pow(Math.random(), 2.6);
+      const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+      p.set(r*s2*Math.cos(th), r*u, r*s2*Math.sin(th));
+      c.copy(cw2).multiplyScalar(0.35 + Math.random()*0.65);
+      sz[k] = 1.4 + Math.random()*1.5;
+    });
+  } else {                       // supernova remnant: torn filament shell
+    const co2 = new THREE.Color(0xffaa78), cc2 = new THREE.Color(0x9ad8e8);
+    fill(1100, (p, c, k) => {
+      const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+      const r = R*(0.86 + 0.22*Math.sin(th*5 + u*9) + Math.random()*0.12);
+      p.set(r*s2*Math.cos(th), r*u, r*s2*Math.sin(th));
+      c.copy(Math.random() < 0.6 ? co2 : cc2).multiplyScalar(0.25 + Math.random()*0.5);
+      sz[k] = 1.7 + Math.random()*1.7;
+    });
+  }
+  const pts = makePoints(pos, col, sz, 0.8);
+  g.add(pts); starsBand.fade(pts.material, 0.8);
+  starsBand.group.add(g);
+  const dso = { rec, pos: v };
+  DSO_OBJS.push(dso);
+  starsBand.labels.push({ obj: g, name: name.toUpperCase(), cls: 'dim', pri: 5.2,
+    minZ: clamp(Math.log10(dist*KM.ly) - 2.0, 11.4, 15.0), maxZ: 15.7, dso });
 }
 
 /* ========================= BAND 4 · THE MILKY WAY ========================= */
@@ -1338,6 +1483,319 @@ const uniBand = makeBand(3.0857e21, 21.35, 22.45, 60, 61);
     cls:'dim', pri: 7, minZ: 23.1, maxZ: 24.3 });
 }
 
+/* ================== THE DESCENT · BANDS 8–16 (below Earth) ================ */
+/* Powers of Ten goes both ways. Below Earth's surface (z ≈ 3.8) the zoom
+   keeps going: atmosphere → ocean → plankton → a living cell → DNA → an
+   atom → its nucleus → inside a proton → the quantum foam at the Planck
+   length. Same band trick, units shrinking a thousandfold at a time.       */
+const MICRO_BANDS = [], MICRO_SPIN = [], MICRO_ANIM = [];
+let microT = 0;
+function microBand(kmPerUnit, zIn0, zIn1, zOut0, zOut1) {
+  const b = makeBand(kmPerUnit, zIn0, zIn1, zOut0, zOut1);
+  MICRO_BANDS.push(b); return b;
+}
+function microLabel(band, name, minZ, maxZ, pos, cls, pri) {
+  const o = new THREE.Object3D(); if (pos) o.position.copy(pos);
+  band.group.add(o);
+  band.labels.push({ obj: o, name, cls: cls || 'dim', pri: pri || 6, minZ, maxZ });
+}
+/* log-uniform shell cloud: radii spread over decades so something is always
+   at screen scale while the zoom sweeps through the band */
+function shellCloud(n, rMin, rMax, colFn, szMin, szMax) {
+  const pos = new Float32Array(n*3), col = new Float32Array(n*3), sz = new Float32Array(n);
+  const lr0 = Math.log(rMin), lr1 = Math.log(rMax);
+  for (let i = 0; i < n; i++) {
+    const r = Math.exp(lr0 + Math.random()*(lr1-lr0));
+    const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+    pos[i*3] = r*s2*Math.cos(th); pos[i*3+1] = r*u; pos[i*3+2] = r*s2*Math.sin(th);
+    const c = colFn();
+    col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
+    sz[i] = szMin + Math.random()*(szMax-szMin);
+  }
+  return { pos, col, sz };
+}
+
+/* — 8 · THE SKY (1 unit = 1 km): falling out of the blue — */
+const skyBand = microBand(1, -0.6, 0.4, 3.74, 3.92);
+{
+  const c1 = new THREE.Color(0xe8f2ff), c2 = new THREE.Color(0xaecdf0);
+  const d = shellCloud(1500, 1.2, 2600,
+    () => c1.clone().lerp(c2, Math.random()).multiplyScalar(0.45 + Math.random()*0.5), 4, 14);
+  const pts = makePoints(d.pos, d.col, d.sz, 0.45);
+  skyBand.group.add(pts); skyBand.fade(pts.material, 0.45);
+  microLabel(skyBand, 'FALLING — THROUGH 30 KM OF ATMOSPHERE', 2.0, 3.5, new THREE.Vector3(0, 300, 0));
+  microLabel(skyBand, 'CLOUD LEVEL', 0.6, 1.8, new THREE.Vector3(0, 5, 0));
+}
+
+/* — 9 · THE OCEAN (1 unit = 1 m) — */
+const oceanBand = microBand(1e-3, -5.0, -4.0, 0.9, 1.8);
+{
+  const cw = new THREE.Color(0xbfe2e8);
+  const d = shellCloud(4200, 0.004, 1800,
+    () => cw.clone().multiplyScalar(0.22 + Math.random()*0.5), 1.6, 3.4);
+  const pts = makePoints(d.pos, d.col, d.sz, 0.55);
+  oceanBand.group.add(pts); oceanBand.fade(pts.material, 0.55);
+  MICRO_SPIN.push([pts, 0.008]);
+  microLabel(oceanBand, 'THE OPEN OCEAN', -0.2, 1.3, new THREE.Vector3(0, 160, 0));
+  microLabel(oceanBand, 'MARINE SNOW — A SLOW RAIN OF LIFE', -3.4, -1.2, new THREE.Vector3(0.5, 0.4, 0));
+}
+
+/* — 10 · PLANKTON (1 unit = 1 mm) — */
+const plankBand = microBand(1e-6, -7.6, -6.8, -4.6, -3.8);
+{
+  const cg = new THREE.Color(0x9fe8c8), cb = new THREE.Color(0x86c8ea);
+  const d = shellCloud(2400, 0.02, 900,
+    () => (Math.random() < 0.5 ? cg : cb).clone().multiplyScalar(0.3 + Math.random()*0.65), 1.8, 4.2);
+  const pts = makePoints(d.pos, d.col, d.sz, 0.7);
+  plankBand.group.add(pts); plankBand.fade(pts.material, 0.7);
+  /* centrepiece: a diatom chain — five glass cells, ~0.4 mm end to end */
+  const chain = new THREE.Group(); plankBand.group.add(chain);
+  for (let i = 0; i < 5; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.045, 24, 16),
+      new THREE.MeshBasicMaterial({ color: 0xbfe8d8, transparent: true, opacity: 0.5 }));
+    m.scale.set(1, 0.62, 0.62); m.position.x = (i-2)*0.082;
+    chain.add(m); plankBand.fade(m.material, 0.5);
+  }
+  const glow = new THREE.SpriteMaterial({ map: TEX_SOFT, color: 0xc8f0e0,
+    transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending });
+  const gs = new THREE.Sprite(glow); gs.scale.setScalar(0.7);
+  chain.add(gs); plankBand.fade(glow, 0.35);
+  MICRO_SPIN.push([chain, 0.12]);
+  microLabel(plankBand, 'PLANKTON — HALF THE OXYGEN YOU BREATHE', -6.0, -4.4, new THREE.Vector3(0, 1.6, 0));
+  microLabel(plankBand, 'A DIATOM CHAIN · SHELLS OF GLASS · 0.4 MM', -7.3, -6.1, new THREE.Vector3(0, 0.16, 0));
+}
+
+/* — 11 · A LIVING CELL (1 unit = 1 µm) — */
+const cellBand = microBand(1e-9, -11.5, -10.7, -7.3, -6.5);
+{
+  const memMat = new THREE.ShaderMaterial({
+    uniforms: { uOpacity: { value: 1 } },
+    vertexShader: SPHERE_VERT,
+    fragmentShader: `uniform float uOpacity; varying vec3 vWN; varying vec3 vWP;
+      void main(){ vec3 v = normalize(cameraPosition - vWP);
+        float rim = pow(1.0 - abs(dot(normalize(vWN), v)), 2.4);
+        gl_FragColor = vec4(vec3(0.55,0.85,0.78), (0.05 + rim*0.8) * uOpacity); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const mem = new THREE.Mesh(new THREE.SphereGeometry(4, 64, 48), memMat);
+  cellBand.group.add(mem); cellBand.fade(memMat);
+  /* cytoplasm: organelles, ribosomes, a scatter of warm mitochondria */
+  const ON = 2600, op = new Float32Array(ON*3), oc = new Float32Array(ON*3), os = new Float32Array(ON);
+  const cyt = new THREE.Color(0x8fd8b8), mit = new THREE.Color(0xe8c890);
+  for (let i = 0; i < ON; i++) {
+    const r = 3.7*Math.cbrt(Math.random());
+    const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+    op[i*3] = r*s2*Math.cos(th); op[i*3+1] = r*u; op[i*3+2] = r*s2*Math.sin(th);
+    const isMit = Math.random() < 0.06;
+    const c = (isMit ? mit : cyt).clone().multiplyScalar(0.2 + Math.random()*0.5);
+    oc[i*3] = c.r; oc[i*3+1] = c.g; oc[i*3+2] = c.b;
+    os[i] = isMit ? 3.4 : 1.3 + Math.random()*1.3;
+  }
+  const opts = makePoints(op, oc, os, 0.8);
+  cellBand.group.add(opts); cellBand.fade(opts.material, 0.8);
+  MICRO_SPIN.push([opts, 0.02]);
+  const nucMat = new THREE.MeshBasicMaterial({ color: 0x9a86d8, transparent: true, opacity: 0.3 });
+  const nuc = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 24), nucMat);
+  nuc.position.set(0.9, 0.4, -0.5);
+  cellBand.group.add(nuc); cellBand.fade(nucMat, 0.3);
+  microLabel(cellBand, 'A SINGLE CELL · 8 MICROMETRES', -9.4, -7.6, new THREE.Vector3(0, 3.4, 0));
+  microLabel(cellBand, 'THE NUCLEUS — TWO METRES OF DNA FOLDED INSIDE', -11.2, -9.7, new THREE.Vector3(0.9, 2.2, -0.5));
+}
+
+/* — 12 · DNA (1 unit = 1 nm) — */
+const dnaBand = microBand(1e-12, -13.1, -12.5, -11.4, -10.7);
+{
+  const helix = new THREE.Group(); dnaBand.group.add(helix);
+  const nBP = 160, RISE = 0.34, RAD = 1.0, TWIST = 6.283/10, GROOVE = 2.2;
+  const bp = new Float32Array(nBP*2*3), bc = new Float32Array(nBP*2*3), bs = new Float32Array(nBP*2);
+  const rp = new Float32Array(nBP*2*3), rc = new Float32Array(nBP*2*3);
+  const sA = new THREE.Color(0x9fd8e8), sB = new THREE.Color(0xd8c8f0);
+  const AT = new THREE.Color(0xe8c878), GC = new THREE.Color(0x7fd8d0);
+  for (let i = 0; i < nBP; i++) {
+    const y = (i - nBP/2)*RISE, th = i*TWIST;
+    const ax = Math.cos(th)*RAD, az = Math.sin(th)*RAD;
+    const bx = Math.cos(th+GROOVE)*RAD, bz = Math.sin(th+GROOVE)*RAD;
+    bp.set([ax, y, az, bx, y, bz], i*6);
+    const ca = sA.clone().multiplyScalar(0.5+Math.random()*0.5);
+    const cb2 = sB.clone().multiplyScalar(0.5+Math.random()*0.5);
+    bc.set([ca.r,ca.g,ca.b, cb2.r,cb2.g,cb2.b], i*6);
+    bs[i*2] = bs[i*2+1] = 2.6;
+    rp.set([ax, y, az, bx, y, bz], i*6);                  // rung endpoints
+    const pair = (Math.random() < 0.5 ? AT : GC).clone().multiplyScalar(0.75);
+    rc.set([pair.r,pair.g,pair.b, pair.r,pair.g,pair.b], i*6);
+  }
+  const bpts = makePoints(bp, bc, bs, 0.95);
+  helix.add(bpts); dnaBand.fade(bpts.material, 0.95);
+  /* continuous sugar-phosphate backbones — the points alone read as noise */
+  for (let s = 0; s < 2; s++) {
+    const sp2 = new Float32Array(nBP*3);
+    for (let i = 0; i < nBP; i++) {
+      sp2[i*3] = bp[i*6 + s*3]; sp2[i*3+1] = bp[i*6 + s*3 + 1]; sp2[i*3+2] = bp[i*6 + s*3 + 2];
+    }
+    const sGeo = new THREE.BufferGeometry();
+    sGeo.setAttribute('position', new THREE.BufferAttribute(sp2, 3));
+    const sMat = new THREE.LineBasicMaterial({ color: s ? 0xb8a8e0 : 0x8fc8e0,
+      transparent: true, opacity: 0.75 });
+    helix.add(new THREE.Line(sGeo, sMat)); dnaBand.fade(sMat, 0.75);
+  }
+  const rGeo = new THREE.BufferGeometry();
+  rGeo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
+  rGeo.setAttribute('color', new THREE.BufferAttribute(rc, 3));
+  const rMat2 = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55 });
+  helix.add(new THREE.LineSegments(rGeo, rMat2)); dnaBand.fade(rMat2, 0.55);
+  MICRO_SPIN.push([helix, 0.1]);
+  microLabel(dnaBand, 'DNA — THE MOLECULE OF MEMORY', -12.3, -11.3, new THREE.Vector3(0, 1.2, 0));
+  microLabel(dnaBand, 'EACH RUNG — ONE LETTER OF YOUR GENOME', -13.0, -12.3, new THREE.Vector3(0.05, 0.05, 0));
+}
+
+/* — 13 · AN ATOM (1 unit = 1 pm) — */
+/* a carbon atom (Ø ~134 pm) is only ~15× narrower than DNA — the scales
+   nest tightly here, so the windows overlap closely */
+const atomBand = microBand(1e-15, -16.6, -15.8, -11.9, -11.2);
+{
+  const EN = 3800, ep = new Float32Array(EN*3), ec = new Float32Array(EN*3), es = new Float32Array(EN);
+  const cb3 = new THREE.Color(0x8fb8ff);
+  for (let i = 0; i < EN; i++) {
+    const shell = Math.random() < 0.45 ? 26 : 67;            // 1s core · 2s/2p valence
+    const r = shell*(0.7 + Math.random()*0.6);
+    const u = Math.random()*2-1, th = Math.random()*6.283, s2 = Math.sqrt(1-u*u);
+    ep[i*3] = r*s2*Math.cos(th); ep[i*3+1] = r*u; ep[i*3+2] = r*s2*Math.sin(th);
+    const c = cb3.clone().multiplyScalar(0.18 + Math.random()*0.4);
+    ec[i*3] = c.r; ec[i*3+1] = c.g; ec[i*3+2] = c.b;
+    es[i] = 1.2 + Math.random()*1.4;
+  }
+  const epts = makePoints(ep, ec, es, 0.55);
+  atomBand.group.add(epts); atomBand.fade(epts.material, 0.55);
+  MICRO_SPIN.push([epts, 0.03]);
+  const nDot = makePoints(new Float32Array(3), new Float32Array([1, 0.82, 0.6]),
+    new Float32Array([4.5]), 0.95);
+  atomBand.group.add(nDot); atomBand.fade(nDot.material, 0.95);
+  microLabel(atomBand, 'A CARBON ATOM — FORGED INSIDE A DYING STAR', -13.2, -12.1, new THREE.Vector3(0, 80, 0));
+  microLabel(atomBand, 'ELECTRONS: PROBABILITY CLOUDS, NOT ORBITS', -14.4, -13.3, new THREE.Vector3(2.4, 2.4, 0));
+  microLabel(atomBand, 'THE NUCLEUS — 25,000× SMALLER THAN ITS ATOM', -16.4, -15.0, new THREE.Vector3(0, 0.03, 0));
+}
+
+/* — 14 · THE NUCLEUS (1 unit = 1 fm) — */
+const nucBand = microBand(1e-18, -18.0, -17.5, -16.3, -15.6);
+{
+  const grp = new THREE.Group(); nucBand.group.add(grp);
+  const NUCLEONS = [];
+  for (let i = 0; i < 12; i++) {                            // carbon-12, golden-spiral packed
+    const proton = i < 6;
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.92, 28, 20),
+      new THREE.MeshBasicMaterial({ color: proton ? 0xe8b890 : 0xa8b4c4, transparent: true, opacity: 0.8 }));
+    const phi = Math.acos(1 - 2*(i+0.5)/12), th = 2.39996*i;
+    m.position.set(1.55*Math.sin(phi)*Math.cos(th), 1.55*Math.cos(phi), 1.55*Math.sin(phi)*Math.sin(th));
+    grp.add(m); nucBand.fade(m.material, 0.8);
+    NUCLEONS.push({ m, p0: m.position.clone(), ph: Math.random()*6.28 });
+  }
+  const nGlow = new THREE.SpriteMaterial({ map: TEX_GLOW, color: 0xe8c8a0,
+    transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending });
+  const ngs = new THREE.Sprite(nGlow); ngs.scale.setScalar(9);
+  grp.add(ngs); nucBand.fade(nGlow, 0.3);
+  MICRO_SPIN.push([grp, 0.05]);
+  if (!REDUCED) MICRO_ANIM.push(t => {
+    if (!nucBand.group.visible) return;
+    for (const n of NUCLEONS) {
+      n.m.position.set(n.p0.x + Math.sin(t*3.1 + n.ph)*0.07,
+                       n.p0.y + Math.sin(t*2.6 + n.ph*2)*0.07,
+                       n.p0.z + Math.cos(t*3.4 + n.ph)*0.07);
+    }
+  });
+  microLabel(nucBand, 'CARBON-12 · SIX PROTONS · SIX NEUTRONS', -17.2, -16.3, new THREE.Vector3(0, 3.6, 0));
+  microLabel(nucBand, '99.95% OF YOUR MASS LIVES IN NUCLEI LIKE THIS', -17.7, -16.9, new THREE.Vector3(2.6, 1.6, 0));
+}
+
+/* — 15 · INSIDE A PROTON (1 unit = 0.01 fm) — */
+/* the proton's charge radius is 0.84 fm — its interior lives at z ≈ -18 */
+const qBand = microBand(1e-20, -20.2, -19.4, -17.9, -17.2);
+{
+  /* confinement boundary — the proton's charge radius, 0.84 fm */
+  const cb4 = new THREE.Color(0xe8c8a8);
+  const d = shellCloud(900, 74, 96, () => cb4.clone().multiplyScalar(0.1 + Math.random()*0.2), 1.4, 2.6);
+  const bpts = makePoints(d.pos, d.col, d.sz, 0.5);
+  qBand.group.add(bpts); qBand.fade(bpts.material, 0.5);
+  const QCOL = [0xff7a8a, 0x8aff9a, 0x8ab8ff];               // colour charge, literally
+  const quarks = [];
+  for (let i = 0; i < 3; i++) {
+    const sm = new THREE.SpriteMaterial({ map: TEX_SOFT, color: QCOL[i],
+      transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+    const s = new THREE.Sprite(sm); s.scale.setScalar(24);
+    const a = i*2.094;
+    s.position.set(Math.cos(a)*26, 0, Math.sin(a)*26);
+    qBand.group.add(s); qBand.fade(sm, 0.85);
+    quarks.push(s);
+  }
+  const gluGeo = new THREE.BufferGeometry();
+  gluGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(18), 3));
+  const gluMat = new THREE.LineBasicMaterial({ color: 0xfff0d8, transparent: true,
+    opacity: 0.4, blending: THREE.AdditiveBlending });
+  qBand.group.add(new THREE.LineSegments(gluGeo, gluMat));   // opacity driven below
+  MICRO_ANIM.push(t => {
+    if (!qBand.group.visible) return;
+    for (let i = 0; i < 3; i++) {
+      const a = i*2.094 + (REDUCED ? 0 : Math.sin(t*1.3 + i)*0.4);
+      const r = 26 + (REDUCED ? 0 : 8*Math.sin(t*2.1 + i*2.5));
+      quarks[i].position.set(Math.cos(a)*r, REDUCED ? 0 : 8*Math.sin(t*1.7 + i*1.3), Math.sin(a)*r);
+    }
+    const P = gluGeo.attributes.position;
+    for (let i = 0; i < 3; i++) {
+      const q0 = quarks[i].position, q1 = quarks[(i+1)%3].position;
+      P.setXYZ(i*2, q0.x, q0.y, q0.z); P.setXYZ(i*2+1, q1.x, q1.y, q1.z);
+    }
+    P.needsUpdate = true;
+    gluMat.opacity = qBand.alpha * (REDUCED ? 0.4 : 0.18 + 0.34*Math.abs(Math.sin(t*6.3)));
+  });
+  microLabel(qBand, 'INSIDE A PROTON · 0.84 FEMTOMETRES', -18.2, -17.3, new THREE.Vector3(0, 60, 0));
+  microLabel(qBand, 'THREE QUARKS — "RED", "GREEN", "BLUE"', -18.4, -17.7, new THREE.Vector3(34, 30, 0));
+  microLabel(qBand, 'THE GLUON FIELD IS ~99% OF YOUR MASS', -19.3, -18.4, new THREE.Vector3(0, -3, 0));
+}
+
+/* — 15½ · THE DESERT (1 unit = 10⁻¹⁹ m) — below the quark, twelve orders of
+   magnitude with no known structure. A faint shimmer keeps the void alive
+   until the foam fades in (one band can only span ~14 decades of scale).   */
+const desertBand = microBand(1e-22, -25.4, -24.6, -20.3, -19.6);
+{
+  const cd = new THREE.Color(0x9a8ac8);
+  const d = shellCloud(1600, 1e-3, 3e5,
+    () => cd.clone().multiplyScalar(0.12 + Math.random()*0.25), 1.0, 2.0);
+  const pts = makePoints(d.pos, d.col, d.sz, 0.4);
+  desertBand.group.add(pts); desertBand.fade(pts.material, 0.4);
+  MICRO_SPIN.push([pts, 0.01]);
+  microLabel(desertBand, 'SMALLER THAN ANYTHING — NO KNOWN STRUCTURE LIVES HERE', -23.5, -21.2, new THREE.Vector3(0, 0.08, 0));
+  microLabel(desertBand, 'KEEP GOING', -24.8, -23.7, new THREE.Vector3(0, 0.004, 0));
+}
+
+/* — 16 · THE QUANTUM FOAM (1 unit = 3×10⁻³¹ m) — */
+/* Below the quark there is nothing with a name for twelve orders of
+   magnitude — and then the floor. */
+const foamBand = microBand(3e-34, -45, -44, -24.6, -23.8);
+{
+  const cv2 = new THREE.Color(0xb8a8e8), ct2 = new THREE.Color(0x7fd8c8);
+  /* radii span every visible decade of the band, down past the very bottom —
+     the foam must never go dark on the way to the floor */
+  const d1 = shellCloud(14000, 1e-6, 2.5e9,
+    () => cv2.clone().multiplyScalar(0.3 + Math.random()*0.5), 1.8, 3.4);
+  const f1 = makePoints(d1.pos, d1.col, d1.sz, 0.7);
+  foamBand.group.add(f1); foamBand.fade(f1.material, 0.7);
+  const d2 = shellCloud(9000, 1e-6, 2.5e9,
+    () => ct2.clone().multiplyScalar(0.22 + Math.random()*0.4), 1.4, 2.8);
+  const f2 = makePoints(d2.pos, d2.col, d2.sz, 0.5);
+  foamBand.group.add(f2); foamBand.fade(f2.material, 0.5);
+  MICRO_SPIN.push([f1, 0.012], [f2, -0.016]);
+  /* the wall at the bottom: the foam boils up bright as you hit the floor */
+  const cw3 = new THREE.Color(0xd8c8ff);
+  const d3 = shellCloud(3200, 8e-7, 1.2e-4,
+    () => cw3.clone().multiplyScalar(0.4 + Math.random()*0.6), 2.0, 4.0);
+  const f3 = makePoints(d3.pos, d3.col, d3.sz, 0.85);
+  foamBand.group.add(f3); foamBand.fade(f3.material, 0.85);
+  MICRO_SPIN.push([f3, 0.02]);
+  microLabel(foamBand, 'A MILLION TIMES SMALLER THAN A QUARK — AND STILL NOTHING', -28.5, -26.0, new THREE.Vector3(0, 5.6e5, 0));
+  microLabel(foamBand, 'NO MICROSCOPE CAN SEE THIS DEEP — ONLY MATHEMATICS', -31.5, -28.5, new THREE.Vector3(0, 550, 0));
+  microLabel(foamBand, 'SPACETIME ITSELF MAY BE A FOAM', -35.5, -32.5, new THREE.Vector3(0, 0.06, 0));
+  microLabel(foamBand, 'THE PLANCK LENGTH · 1.6×10⁻³⁵ M · THE FLOOR OF REALITY', -37.95, -36.6,
+    new THREE.Vector3(0, 2.2e-5, 0), 'big', 9);
+}
+
 /* ========================== BACKDROP · NIGHT SKY ========================== */
 const SKY = (() => {
   const N = 4200, pos = new Float32Array(N*3), col = new Float32Array(N*3), sz = new Float32Array(N);
@@ -1365,6 +1823,7 @@ for (let i = 0; i < POOL_N; i++) {
     if (!L) return;
     if (L.star) { flyTo(L.star === 'SOL' ? 'SOL' : L.star); return; }
     if (L.planet) { focusPlanetObj(L.obj, L.planet.rkm, L.name); return; }
+    if (L.dso) { flyToDSO(L.dso); return; }
     if (L.zoomTo) { cancelTour(); clearFocus(); zoomT = L.zoomTo; }
   });
   document.body.appendChild(d); pool.push(d);
@@ -1401,7 +1860,7 @@ function updateLabels() {
     d.style.opacity = c.a.toFixed(2);
     d.className = 'olabel ' + (c.L.cls || '');
     d.innerHTML = c.L.name + (c.L.badge ? `<span class="pl">⟡ ${c.L.badge} planet${c.L.badge>1?'s':''}</span>` : '');
-    d.style.cursor = (c.L.star || c.L.planet || c.L.zoomTo) ? 'pointer' : 'default';
+    d.style.cursor = (c.L.star || c.L.planet || c.L.dso || c.L.zoomTo) ? 'pointer' : 'default';
     d._L = c.L;
   }
   for (let i = n; i < POOL_N; i++) pool[i].style.display = 'none';
@@ -1430,13 +1889,23 @@ function focusPlanetObj(holder, rkm, name) {
 }
 
 /* ============================== FLY TO STAR =============================== */
-let flight = null;
+let flight = null, anchorIsDSO = false;
 const STAR_RADII_AU = { 0:0.0011, 1:0.00465, 2:0.0093, 3:0.14, 4:3.2 };
+
+/* the lowest zoom currently reachable: descending below Earth's surface is
+   only possible at home (or with Earth itself pinned) */
+function floorZ() {
+  if (anchorIsDSO) return 11.0;
+  const microOK = anchorName === 'SOL' &&
+    (!focusPlanet || focusPlanet === sysState.earthHolder || focusPlanet === earth);
+  return Math.max(zoomFloor, microOK ? ZMIN : Z_SURF);
+}
 
 function flyTo(rec, arriveZ) {
   cancelTour();
   clearFocus();
   hideCard();
+  anchorIsDSO = false;
   const isSol = rec === 'SOL';
   const sameAnchor = isSol ? anchorName === 'SOL' : anchorName === rec[0];
   const to = isSol ? new THREE.Vector3() : radecToVec(rec[2], rec[3], rec[1]);
@@ -1462,6 +1931,26 @@ function flyTo(rec, arriveZ) {
   setCaption(isSol ? 'Returning home' : rec[0], isSol ? '' : `${rec[1].toLocaleString(undefined,{maximumSignificantDigits:3})} LIGHT-YEARS FROM EARTH`, true);
 }
 
+/* fly to a deep-sky object: same flight mechanics, but no system rebuild —
+   you arrive AT the nebula, not at a star with planets */
+function flyToDSO(d) {
+  cancelTour();
+  clearFocus();
+  hideCard();
+  const rec = d.rec;
+  anchorName = rec[0]; anchorIsDSO = true;
+  const to = d.pos.clone();
+  const zArr = clamp(Math.log10(rec[4]*2.6*KM.ly), 13.0, 15.6);
+  const dist = to.distanceTo(starsAnchor);
+  const zMid = Math.max(zoomT, zArr, dist > 0.1 ? Math.log10(dist*KM.ly*0.45) : 0);
+  flight = { from: starsAnchor.clone(), to, t: 0,
+    dur: clamp(2.4 + dist/220, 2.6, 5.2),
+    zFrom: zoomT, zMid, zArr, dso: d,
+    single: zMid <= Math.max(zoomT, zArr) + 0.05 };
+  try { history.replaceState(null, '', '#' + slug(rec[0])); } catch(err) {}
+  setCaption(rec[0], `${DSO_TYPE[rec[5]]} · ${rec[3].toLocaleString()} LIGHT-YEARS FROM EARTH`, true);
+}
+
 function stepFlight(dt) {
   if (!flight) return;
   flight.t += dt / flight.dur;
@@ -1472,9 +1961,11 @@ function stepFlight(dt) {
     : (t < 0.5 ? lerp(flight.zFrom, flight.zMid, easeIO(t*2))
                : lerp(flight.zMid, flight.zArr, easeIO((t-0.5)*2)));
   if (flight.t >= 1) {
-    const rec = flight.rec; flight = null;
+    const rec = flight.rec, dso = flight.dso; flight = null;
     setCaption('', '', false);
-    if (rec) showCard(rec); else if (zoomT > 6) showCard('SOL');
+    if (dso) showCardDSO(dso.rec);
+    else if (rec) showCard(rec);
+    else if (zoomT > 6) showCard('SOL');
   }
 }
 
@@ -1488,9 +1979,10 @@ function showCard(rec) {
   if (rec === 'SOL') {
     nameEl.textContent = 'THE SUN';
     subEl.textContent = 'G2V · 4.6 BILLION YEARS OLD · 1 KNOWN LIFE-BEARING WORLD';
+    rows += `<div class="row"><span>POSITIONS REAL FOR</span><b>${new Date().toLocaleDateString()}</b></div>`;
     rows += `<div class="ph">PLANETS — 8 (+ PLUTO)</div>`;
     for (const p of SOL_PLANETS)
-      rows += `<div class="row"><span>${p.name}</span><b>${p.a} AU</b></div>`;
+      rows += `<div class="row"><span>${p.name}</span><b>${p.a.toFixed(2)} AU</b></div>`;
   } else {
     nameEl.textContent = rec[0].toUpperCase();
     subEl.textContent = `${rec[4]}-CLASS · ${rec[1].toLocaleString(undefined,{maximumSignificantDigits:3})} LIGHT-YEARS · ${rec[6]}`;
@@ -1502,6 +1994,15 @@ function showCard(rec) {
     } else rows += `<div class="ph">NO CONFIRMED PLANETS — YET</div>`;
   }
   rowsEl.innerHTML = rows;
+  cardEl.classList.add('show');
+}
+function showCardDSO(rec) {
+  document.getElementById('cardName').textContent = rec[0].toUpperCase();
+  document.getElementById('cardSub').textContent =
+    `${DSO_TYPE[rec[5]]} · ${rec[3].toLocaleString()} LIGHT-YEARS` + (rec[6] ? ` · ${rec[6]}` : '');
+  document.getElementById('cardRows').innerHTML =
+    `<div class="row"><span>DISTANCE</span><b>${rec[3].toLocaleString()} ly</b></div>` +
+    `<div class="row"><span>SIZE</span><b>≈ ${Math.round(rec[4]*2).toLocaleString()} ly across</b></div>`;
   cardEl.classList.add('show');
 }
 function hideCard(){ cardEl.classList.remove('show'); }
@@ -1526,7 +2027,16 @@ const TOUR = [
   { z: 19.74, h: 3.0, c: 'The Local Group.',                                 s: 'ANDROMEDA · 2.5 MILLION LIGHT-YEARS · ARRIVING IN 4.5 BILLION YEARS' },
   { z: 21.15, h: 2.8, c: 'Galaxies gather along filaments of dark matter.',  s: 'THE VIRGO SUPERCLUSTER · LANIAKEA' },
   { z: 23.92, h: 4.4, c: 'The observable universe. Two trillion galaxies.',  s: '93 BILLION LIGHT-YEARS · EVERYTHING WE CAN EVER SEE' },
-  { z: 23.92, h: 4.2, c: 'Built from a single prompt by Claude Fable 5.',    s: 'SCROLL TO EXPLORE · CLICK ANY STAR TO VISIT IT' },
+  /* …and back down, the other way — Powers of Ten goes in both directions */
+  { z: 4.32,  h: 2.4, d: 8,   c: 'And back home — now the other way.',       s: 'DOWN, THIS TIME' },
+  { z: -0.8,  h: 2.4, d: 5,   c: 'Into the ocean.',                          s: '' },
+  { z: -8.1,  h: 2.8, d: 6,   c: 'A living cell.',                           s: 'EVERY LIVING THING IS BUILT FROM THESE' },
+  { z: -11.6, h: 2.6, d: 4,   c: 'DNA — two nanometres wide, two metres long in every cell.', s: '' },
+  { z: -12.5, h: 2.6, d: 3,   c: 'An atom: almost entirely empty space.',    s: 'CARBON · FORGED INSIDE A DYING STAR' },
+  { z: -17.0, h: 2.6, d: 4.5, c: 'The nucleus — 25,000 times smaller than its atom.', s: 'ALMOST ALL OF YOUR MASS' },
+  { z: -18.1, h: 2.8, d: 3,   c: 'Three quarks, bound by the strong force.', s: 'INSIDE A SINGLE PROTON' },
+  { z: -37.5, h: 4.4, d: 12,  c: 'The Planck length — the floor of reality.', s: '61 ORDERS OF MAGNITUDE BELOW THE COSMIC HORIZON' },
+  { z: -37.5, h: 4.2, c: 'Built from a single prompt by Claude Fable 5.',    s: 'SCROLL TO EXPLORE · S FOR A PHOTO' },
 ];
 let tour = null;
 function startTour() {
@@ -1546,7 +2056,7 @@ function nextLeg() {
   if (tour.i >= TOUR.length) { endTour(); return; }
   const k = TOUR[tour.i];
   tour.phase = 'travel'; tour.t = 0; tour.zFrom = zoomT;
-  tour.dur = Math.max(2.0, Math.abs(k.z - zoomT) * 1.05);
+  tour.dur = k.d || Math.max(2.0, Math.abs(k.z - zoomT) * 1.05);
   if (tour.i === 0 && Math.abs(k.z - zoomT) > 3) tour.dur = Math.abs(k.z - zoomT) * 0.55;
   setCaption('', '', false);
 }
@@ -1555,12 +2065,12 @@ function stepTour(dt) {
   const k = TOUR[tour.i];
   if (tour.phase === 'travel') {
     tour.t += dt / tour.dur;
-    yawT += dt * 0.045; pitchT = lerp(pitchT, 0.17, dt*0.5);
+    if (!REDUCED) { yawT += dt * 0.045; pitchT = lerp(pitchT, 0.17, dt*0.5); }
     if (tour.t >= 1) { zoomT = k.z; tour.phase = 'hold'; tour.t = 0; setCaption(k.c, k.s, true); }
     else zoomT = lerp(tour.zFrom, k.z, easeIO(clamp(tour.t,0,1)));
   } else {
     tour.t += dt / k.h;
-    yawT += dt * 0.03;
+    if (!REDUCED) yawT += dt * 0.03;
     if (tour.t >= 1) nextLeg();
   }
 }
@@ -1570,16 +2080,27 @@ document.getElementById('tourBtn').onclick = () => tour ? endTour() : startTour(
 document.getElementById('homeBtn').onclick = () => flyTo('SOL', 4.6);
 
 /* =============================== LADDER =================================== */
-const TICKS = [['EARTH',4.32],['THE MOON',5.66],['SOLAR SYSTEM',9.9],
+const TICKS = [['THE PLANCK LENGTH',-37.5],['A PROTON',-18.0],['AN ATOM',-12.6],
+               ['A LIVING CELL',-8.1],['THE OCEAN',-0.5],
+               ['EARTH',4.32],['THE MOON',5.66],['SOLAR SYSTEM',9.9],
                ['NEAREST STARS',13.72],['MILKY WAY',17.96],['LOCAL GROUP',19.74],
                ['SUPERCLUSTERS',21.15],['THE UNIVERSE',23.92]];
 const trackEl = document.getElementById('ladderTrack');
 const dotEl = document.getElementById('ladderDot');
+/* piecewise ladder: the cosmos gets the top two-thirds, the descent the rest
+   (linear in z the cosmic stops would crowd into a third of the track) */
+const LADDER_SPLIT = 0.34;
+function ladderFrac(z) {
+  return z >= Z_SURF
+    ? LADDER_SPLIT + (1 - LADDER_SPLIT)*(z - Z_SURF)/(ZMAX - Z_SURF)
+    : LADDER_SPLIT*(z - ZMIN)/(Z_SURF - ZMIN);
+}
 function gotoStop(z) {
   cancelTour();
   if (anchorName !== 'SOL' && z < 11) { flyTo('SOL', z); return; }
   clearFocus();
-  if (z < 4.8 && sysState.earthHolder) {           // Earth stop
+  if (z < Z_SURF) { zoomT = z; return; }            // the descent
+  if (z < 4.8 && sysState.earthHolder) {            // Earth stop
     focusPlanetObj(sysState.earthHolder, 6371, 'EARTH');
   } else if (z < 6.3) {                             // Moon stop — pin the Moon itself
     focusPlanetObj(moon, 1737, 'THE MOON');
@@ -1590,7 +2111,7 @@ function gotoStop(z) {
 const tickEls = TICKS.map(([name, z]) => {
   const d = document.createElement('div');
   d.className = 'tick'; d.textContent = name;
-  d.style.top = ((1 - (z - ZMIN)/(ZMAX - ZMIN)) * 100) + '%';
+  d.style.top = ((1 - ladderFrac(z)) * 100) + '%';
   d.onclick = () => gotoStop(z);
   trackEl.appendChild(d); return { d, z };
 });
@@ -1600,7 +2121,7 @@ const paletteEl = document.getElementById('palette');
 const palInput = document.getElementById('palInput');
 const palList = document.getElementById('palList');
 const PAL = [];
-PAL.push({ t:'▶ Play the Journey', s:'60-SECOND CINEMATIC TOUR', g:'ACTIONS', fn: () => startTour() });
+PAL.push({ t:'▶ Play the Journey', s:'CINEMATIC TOUR · UNIVERSE TO PLANCK LENGTH', g:'ACTIONS', fn: () => startTour() });
 PAL.push({ t:'♫ Music', s:'CYCLE · OFF / EPIC / DRIFT', g:'ACTIONS', fn: () => cycleMusic() });
 TICKS.forEach(([name, z]) => PAL.push({ t:name, s:'SCALE STOP', g:'PLACES',
   fn: () => gotoStop(z) }));
@@ -1616,6 +2137,9 @@ STARS.forEach(rec => PAL.push({ t:rec[0],
   s:`${rec[4]}-CLASS · ${rec[1].toLocaleString(undefined,{maximumSignificantDigits:3})} LY` +
     (EXO[rec[0]] ? ` · ⟡ ${EXO[rec[0]].length} PLANETS` : ''),
   g:'STARS', feat: !!EXO[rec[0]], fn: () => flyTo(rec) }));
+DSO_OBJS.forEach(d => PAL.push({ t:d.rec[0],
+  s:`${DSO_TYPE[d.rec[5]]} · ${d.rec[3].toLocaleString()} LY`,
+  g:'NEBULAE & CLUSTERS', fn: () => flyToDSO(d) }));
 GALAXIES.forEach(grec => PAL.push({ t:grec[0],
   s:'GALAXY · ' + (grec[3] >= 150 ? (grec[3]*3.262/1000).toFixed(1)+' MLY' : grec[3]+' KPC'),
   g:'GALAXIES',
@@ -1623,6 +2147,8 @@ GALAXIES.forEach(grec => PAL.push({ t:grec[0],
     if (anchorName !== 'SOL') flyTo('SOL', 19.5); else zoomT = 19.5;
     setCaption(grec[0], grec[6] || 'LOCAL GROUP GALAXY', true);
     setTimeout(() => { if (!tour) setCaption('', '', false); }, 3400); } }));
+PAL.push({ t:'📷 Save a photo', s:'PNG · WITH CAPTION (S)', g:'ACTIONS', fn: () => snapshot() });
+PAL.push({ t:'✨ Bloom', s:'TOGGLE THE GLOW (B)', g:'ACTIONS', fn: () => toggleBloom() });
 
 function randomDest() {
   const pool = PAL.filter(e => e.g !== 'ACTIONS');
@@ -1672,6 +2198,8 @@ palList.addEventListener('pointerdown', e => {
 });
 paletteEl.addEventListener('pointerdown', e => { if (e.target === paletteEl) closePal(); });
 document.getElementById('palBtn').onclick = togglePal;
+document.getElementById('palBtn').textContent = MODK + ' EXPLORE';   // ⌘K on Mac, CTRL+K elsewhere
+document.getElementById('modkHint').textContent = MODK;
 
 /* ============================== CONTROLS ================================== */
 /* time control — real relative orbital speeds, scaled. Cycles like music. */
@@ -1710,7 +2238,7 @@ canvas.addEventListener('pointermove', e => {
     p.x = e.clientX; p.y = e.clientY;
     const [a, b] = [...ptrs.values()];
     const d = Math.hypot(a.x-b.x, a.y-b.y);
-    if (pinchD > 0) zoomT = clamp(zoomT + (pinchD - d) * 0.011, zoomFloor, ZMAX);
+    if (pinchD > 0) zoomT = clamp(zoomT + (pinchD - d) * 0.011, floorZ(), ZMAX);
     pinchD = d;
   } else {
     yawT -= (e.clientX - p.x) * 0.0042;
@@ -1728,7 +2256,7 @@ addEventListener('wheel', e => {
   if (e.target.closest && e.target.closest('#palette,#card')) return;  // let menus scroll
   e.preventDefault(); cancelTour();
   const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
-  zoomT = clamp(zoomT + d * 0.0024, zoomFloor, ZMAX);
+  zoomT = clamp(zoomT + d * 0.0024, floorZ(), ZMAX);
 }, { passive: false });
 addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK') { e.preventDefault(); togglePal(); return; }
@@ -1736,11 +2264,26 @@ addEventListener('keydown', e => {
   if (e.code === 'Space') { e.preventDefault(); tour ? endTour() : startTour(); }
   if (e.code === 'Escape') {
     if (anchorName !== 'SOL') flyTo('SOL');
-    else { hideCard(); if (focusPlanet) { clearFocus(); zoomT = Math.max(zoomT, 8.6); } }
+    else {
+      hideCard();
+      if (focusPlanet) { clearFocus(); zoomT = Math.max(zoomT, 8.6); }
+      else if (zoomT < Z_SURF) zoomT = 4.55;   // surface from anywhere in the descent
+    }
   }
+  /* keyboard navigation — the whole app is reachable without a wheel */
+  if (e.code === 'ArrowUp' || e.code === 'Equal' || e.code === 'NumpadAdd') {
+    e.preventDefault(); cancelTour(); zoomT = clamp(zoomT - 0.55, floorZ(), ZMAX);
+  }
+  if (e.code === 'ArrowDown' || e.code === 'Minus' || e.code === 'NumpadSubtract') {
+    e.preventDefault(); cancelTour(); zoomT = clamp(zoomT + 0.55, floorZ(), ZMAX);
+  }
+  if (e.code === 'ArrowLeft')  { e.preventDefault(); yawT += 0.22; }
+  if (e.code === 'ArrowRight') { e.preventDefault(); yawT -= 0.22; }
   if (e.code === 'KeyM') cycleMusic();
   if (e.code === 'KeyP') quickPause();
   if (e.code === 'KeyR') randomDest();
+  if (e.code === 'KeyS') snapshot();
+  if (e.code === 'KeyB') toggleBloom();
 });
 setTimeout(() => document.getElementById('hint').style.opacity = 0, 14000);
 
@@ -1749,10 +2292,24 @@ const valEl = document.getElementById('scaleVal');
 const unitEl = document.getElementById('scaleUnit');
 const lblEl = document.querySelector('#scaleHud .lbl');
 const sig = v => v.toLocaleString(undefined, { maximumSignificantDigits: 3 });
+const SUPS = { '-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹' };
+const sup = n => String(n).replace(/./g, ch => SUPS[ch] || ch);
+const SI_SMALL = [['m',1],['mm',1e-3],['µm',1e-6],['nm',1e-9],['pm',1e-12],
+                  ['fm',1e-15],['am',1e-18],['zm',1e-21],['ym',1e-24]];
 function updateHud() {
   const km = Math.pow(10, zoom);
   let v, u;
-  if (km < 1e6)             { v = sig(km);                u = 'km'; }
+  if (km < 1) {                                     // the descent: metres and below
+    const m = km*1000;
+    u = null;
+    for (const [un, f2] of SI_SMALL)
+      if (m >= f2*0.9995) { v = sig(m/f2); u = un; break; }
+    if (!u) {                                       // beyond yoctometres: scientific
+      const ex = Math.floor(Math.log10(m));
+      v = sig(m/Math.pow(10, ex)) + '×10' + sup(ex); u = 'm';
+    }
+  }
+  else if (km < 1e6)        { v = sig(km);                u = 'km'; }
   else if (km < KM.AU*0.08) { v = sig(km/1e6);            u = 'million km'; }
   else if (km < KM.ly*0.08) { v = sig(km/KM.AU);          u = 'AU'; }
   else if (km < KM.ly*9e5)  { v = sig(km/KM.ly);          u = 'light-years'; }
@@ -1760,7 +2317,7 @@ function updateHud() {
   else                      { v = sig(km/(KM.ly*1e9));    u = 'billion light-years'; }
   valEl.textContent = v; unitEl.textContent = u;
   lblEl.textContent = anchorName === 'SOL' ? 'VIEW SCALE · FROM EARTH' : 'VIEW SCALE · FROM ' + anchorName.toUpperCase();
-  const f = clamp((zoom - ZMIN)/(ZMAX - ZMIN), 0, 1);
+  const f = clamp(ladderFrac(zoom), 0, 1);
   dotEl.style.top = ((1 - f) * 100) + '%';
   let nearest = 0, best = 99;
   tickEls.forEach((t, i) => { const d = Math.abs(t.z - zoom); if (d < best) { best = d; nearest = i; } });
@@ -2018,27 +2575,178 @@ function cycleMusic() {
 }
 document.getElementById('musicBtn').onclick = cycleMusic;
 
+/* ================================ BLOOM ===================================
+   Lightweight self-contained post pipeline (no examples/ dependencies):
+   scene → bright-pass → separable blur at half res → additive composite.
+   Star glows, the galactic core and the CMB get a proper cinematic halo.   */
+let bloomOn = true;
+const bloomFX = (() => {
+  try {
+    const pars = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
+    const rtScene = new THREE.WebGLRenderTarget(2, 2, pars);
+    const rtA = new THREE.WebGLRenderTarget(2, 2, pars);
+    const rtB = new THREE.WebGLRenderTarget(2, 2, pars);
+    const cam2 = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const scn2 = new THREE.Scene();
+    const VS = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+    const brightMat = new THREE.ShaderMaterial({
+      uniforms: { tD: { value: null }, uTh: { value: 0.30 } },
+      vertexShader: VS, fragmentShader: `
+        uniform sampler2D tD; uniform float uTh; varying vec2 vUv;
+        void main(){ vec3 c = texture2D(tD, vUv).rgb;
+          float l = max(c.r, max(c.g, c.b));
+          gl_FragColor = vec4(c * smoothstep(uTh, uTh + 0.5, l), 1.0); }`,
+      depthTest: false, depthWrite: false });
+    const blurMat = new THREE.ShaderMaterial({
+      uniforms: { tD: { value: null }, uDir: { value: new THREE.Vector2(1, 0) },
+                  uRes: { value: new THREE.Vector2(1, 1) } },
+      vertexShader: VS, fragmentShader: `
+        uniform sampler2D tD; uniform vec2 uDir; uniform vec2 uRes; varying vec2 vUv;
+        void main(){ vec2 px = uDir / uRes;
+          vec3 s = texture2D(tD, vUv).rgb * 0.227;
+          s += (texture2D(tD, vUv + px*1.385).rgb + texture2D(tD, vUv - px*1.385).rgb) * 0.316;
+          s += (texture2D(tD, vUv + px*3.231).rgb + texture2D(tD, vUv - px*3.231).rgb) * 0.070;
+          gl_FragColor = vec4(s, 1.0); }`,
+      depthTest: false, depthWrite: false });
+    const compMat = new THREE.ShaderMaterial({
+      uniforms: { tD: { value: null }, tB: { value: null }, uStr: { value: 0.85 } },
+      vertexShader: VS, fragmentShader: `
+        uniform sampler2D tD; uniform sampler2D tB; uniform float uStr; varying vec2 vUv;
+        void main(){ gl_FragColor = vec4(texture2D(tD, vUv).rgb
+          + texture2D(tB, vUv).rgb * uStr, 1.0); }`,
+      depthTest: false, depthWrite: false });
+    const quad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), brightMat);
+    scn2.add(quad);
+    const _sz = new THREE.Vector2();
+    return {
+      setSize() {
+        renderer.getDrawingBufferSize(_sz);
+        rtScene.setSize(_sz.x, _sz.y);
+        const bw = Math.max(1, _sz.x >> 1), bh = Math.max(1, _sz.y >> 1);
+        rtA.setSize(bw, bh); rtB.setSize(bw, bh);
+        blurMat.uniforms.uRes.value.set(bw, bh);
+      },
+      render() {
+        renderer.setRenderTarget(rtScene); renderer.render(scene, camera);
+        quad.material = brightMat; brightMat.uniforms.tD.value = rtScene.texture;
+        renderer.setRenderTarget(rtA); renderer.render(scn2, cam2);
+        quad.material = blurMat;
+        for (let i = 0; i < 3; i++) {                  // widening ping-pong blur
+          blurMat.uniforms.tD.value = rtA.texture; blurMat.uniforms.uDir.value.set(1 + i*0.9, 0);
+          renderer.setRenderTarget(rtB); renderer.render(scn2, cam2);
+          blurMat.uniforms.tD.value = rtB.texture; blurMat.uniforms.uDir.value.set(0, 1 + i*0.9);
+          renderer.setRenderTarget(rtA); renderer.render(scn2, cam2);
+        }
+        quad.material = compMat;
+        compMat.uniforms.tD.value = rtScene.texture; compMat.uniforms.tB.value = rtA.texture;
+        renderer.setRenderTarget(null); renderer.render(scn2, cam2);
+      }
+    };
+  } catch (e) { return null; }
+})();
+function toggleBloom() {
+  bloomOn = !bloomOn;
+  if (!tour) {
+    setCaption('Bloom ' + (bloomOn ? 'on' : 'off'), '', true);
+    setTimeout(() => { if (!tour) setCaption('', '', false); }, 1400);
+  }
+}
+
 /* ============================== MAIN LOOP ================================= */
 function resize() {
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  if (bloomFX) bloomFX.setSize();
 }
 addEventListener('resize', resize); resize();
 
-/* deep links: cosmos.html#trappist-1 flies straight there; #tour autoplays */
+/* deep links: #trappist-1 / #orion-nebula / #andromeda-m31 fly straight
+   there; #tour autoplays; #v=zoom,yaw,pitch[,anchor] restores an exact view
+   (the URL updates itself as you explore — every view is shareable) */
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function findBySlug(s) {
+  let r = STARS.find(x => slug(x[0]) === s); if (r) return r;
+  r = LIVE_STARS.find(x => slug(x[0]) === s); if (r) return r;
+  const d = DSO_OBJS.find(x => slug(x.rec[0]) === s); if (d) return { dso: d };
+  const g2 = GALAXIES.find(x => slug(x[0]) === s); if (g2) return { gal: g2 };
+  return null;
+}
+function goToFound(rec, arriveZ) {
+  if (rec.dso) flyToDSO(rec.dso);
+  else if (rec.gal) {
+    zoomT = 19.5;
+    setCaption(rec.gal[0], rec.gal[6] || 'LOCAL GROUP GALAXY', true);
+    setTimeout(() => { if (!tour) setCaption('', '', false); }, 3400);
+  } else flyTo(rec, arriveZ);
+}
 function applyHash() {
   const h = decodeURIComponent(location.hash.slice(1));
   if (!h) return;
+  if (h.startsWith('v=')) {                          // shared camera state
+    const p = h.slice(2).split(',');
+    const z = parseFloat(p[0]), vy = parseFloat(p[1]), vp = parseFloat(p[2]);
+    if (isFinite(vy)) yawT = yaw = vy;
+    if (isFinite(vp)) pitchT = pitch = clamp(vp, -1.45, 1.45);
+    if (p[3]) { const rec = findBySlug(p[3]); if (rec) goToFound(rec, isFinite(z) ? z : undefined); }
+    else if (isFinite(z)) { clearFocus(); zoom = zoomT = clamp(z, ZMIN, ZMAX); }
+    return;
+  }
   if (slug(h) === 'tour') { startTour(); return; }
-  const rec = STARS.find(s => slug(s[0]) === slug(h));
-  if (rec) flyTo(rec);
+  const rec = findBySlug(slug(h));
+  if (rec) goToFound(rec);
 }
 addEventListener('hashchange', applyHash);
 setTimeout(applyHash, 900);
 
+/* keep the URL pointing at what you're looking at (debounced, replaceState
+   only — no history spam, no hashchange feedback loop) */
+let lastViewHash = '';
+setInterval(() => {
+  if (tour || flight || document.hidden) return;
+  const a = anchorName !== 'SOL' ? ',' + slug(anchorName) : '';
+  const h = '#v=' + zoomT.toFixed(2) + ',' + yawT.toFixed(3) + ',' + pitchT.toFixed(3) + a;
+  if (h !== lastViewHash) {
+    lastViewHash = h;
+    try { history.replaceState(null, '', h); } catch (e) {}
+  }
+}, 2500);
+
+/* ============================== PHOTO MODE ================================ */
+let wantShot = false;
+function snapshot() { wantShot = true; }              // captured at end of next frame
+function saveShot() {
+  try {
+    const w = canvas.width, h = canvas.height;
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d');
+    g.drawImage(canvas, 0, 0);
+    const s = Math.max(1, h/900);
+    g.fillStyle = 'rgba(232,238,247,.95)';
+    g.font = `600 ${13*s|0}px Helvetica, Arial, sans-serif`;
+    g.fillText('C O S M O S', 26*s, 36*s);
+    g.font = `300 ${21*s|0}px Helvetica, Arial, sans-serif`;
+    g.fillText(`${valEl.textContent} ${unitEl.textContent}`, 26*s, h - 34*s);
+    g.font = `400 ${10.5*s|0}px Helvetica, Arial, sans-serif`;
+    g.fillStyle = 'rgba(150,170,200,.9)';
+    g.fillText(anchorName === 'SOL' ? 'FROM EARTH' : 'FROM ' + anchorName.toUpperCase(), 26*s, h - 14*s);
+    cv.toBlob(b => {
+      if (!b) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'cosmos-' + (slug(anchorName) || 'view') + '.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    });
+    if (!tour) {
+      setCaption('Photo saved', 'COMMIT ONE AS preview.png FOR THE SOCIAL CARD', true);
+      setTimeout(() => { if (!tour) setCaption('', '', false); }, 2600);
+    }
+  } catch (e) {}
+}
+
 let last = performance.now();
+const _cc = new THREE.Color(), _ccWater = new THREE.Color(), _ccSky = new THREE.Color();
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min((now - last)/1000, 0.05); last = now;
@@ -2050,7 +2758,7 @@ function frame(now) {
   /* release only when BOTH actual and target zoom are pulling out — diving
      in from far away must not strip the focus mid-flight */
   if (focusPlanet && zoom > 9.3 && zoomT > 9.0) clearFocus();
-  zoomT = clamp(zoomT, zoomFloor, ZMAX);
+  zoomT = clamp(zoomT, floorZ(), ZMAX);
 
   zoom  += (zoomT  - zoom)  * Math.min(1, dt*4.2);
   yaw   += (yawT   - yaw)   * Math.min(1, dt*6);
@@ -2061,22 +2769,122 @@ function frame(now) {
   earth.rotation.y += adt*0.05;
   clouds.rotation.y += adt*0.058;
   cloudMat.uniforms.uT.value += adt;
-  moonPivot.rotation.y = simYears/0.0748 * 6.28318;
-  for (const p of sysState.planets) p.pivot.rotation.y = p.phase + simYears/p.period * 6.28318;
+  /* the Moon at its real phase for today (mean longitude, J2000) */
+  moonPivot.rotation.y = (218.316 + (epochYears + simYears)*4812.678) * DEG;
+  for (const p of sysState.planets) {
+    if (p.el) keplerPos(p.a, p.el, p.period, epochYears + simYears, p.holder.position);
+    else p.pivot.rotation.y = p.phase + simYears/p.period * 6.28318;
+  }
   mw.rotateY(-adt*0.002);
+  microT += adt*75;                          // descent clock (seconds at 1×)
+  for (const [o, s] of MICRO_SPIN) o.rotation.y += adt*75*s*(REDUCED ? 0.2 : 1);
+  for (const fn of MICRO_ANIM) fn(microT);
 
   for (const b of BANDS) b.update(zoom);
   if (anchorName !== 'SOL') earthBand.group.visible = false;
+  if (anchorIsDSO) sysBand.group.visible = false;   // a nebula has no planets to show
+  /* the descent only exists on (or pinned to) Earth */
+  const microOK = anchorName === 'SOL' &&
+    (!focusPlanet || focusPlanet === sysState.earthHolder || focusPlanet === earth);
+  if (!microOK) for (const b of MICRO_BANDS) b.group.visible = false;
   eDot.material.uniforms.uOpacity.value = earthBand.alpha * smooth(5.35, 6.1, zoom) * 0.95;
   mDot.material.uniforms.uOpacity.value = earthBand.alpha * smooth(5.7, 6.3, zoom)
     * (1 - smooth(7.0, 7.8, zoom)) * 0.8;
   SKY.material.uniforms.uOpacity.value = 0.85 * (1 - smooth(10.8, 12.8, zoom)) * smooth(3.9, 4.4, zoom);
 
+  /* backdrop tint: sky-blue through the atmosphere, abyssal blue underwater */
+  _cc.setRGB(0, 0, 0);
+  if (microOK) {
+    const tw = smooth(-9, -6.5, zoom) * (1 - smooth(0.6, 2.0, zoom));
+    const ts = smooth(0.6, 1.6, zoom) * (1 - smooth(2.2, 3.2, zoom));
+    if (tw > 0) _cc.lerp(_ccWater.setRGB(0.012, 0.07, 0.13), tw);
+    if (ts > 0) _cc.lerp(_ccSky.setRGB(0.10, 0.21, 0.38), ts);
+  }
+  renderer.setClearColor(_cc, 1);
+
   updateLabels(); updateHud();
-  renderer.render(scene, camera);
+  if (bloomOn && bloomFX) bloomFX.render();
+  else { renderer.setRenderTarget(null); renderer.render(scene, camera); }
+  if (wantShot) { wantShot = false; saveShot(); }   // same task as the render — buffer is live
 }
-let simYearsInit = 0; simYears = simYearsInit;   // (kept explicit for clarity)
 requestAnimationFrame(frame);
+
+/* ================== LIVE DATA · NASA EXOPLANET ARCHIVE ====================
+   When online, fetch every confirmed exoplanet with a known distance and
+   radius and add the ~1,200 nearest systems to the sky — clickable, flyable,
+   searchable, exactly like the curated set. Offline the curated set stands. */
+const LIVE_STARS = [];
+(function loadLiveExoplanets() {
+  const Q = 'select pl_name,hostname,ra,dec,sy_dist,st_spectype,pl_orbsmax,pl_orbper,pl_rade ' +
+            'from pscomppars where sy_dist is not null and pl_rade is not null ' +
+            'and ra is not null and dec is not null order by sy_dist asc';
+  fetch('https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=' +
+        encodeURIComponent(Q) + '&format=json')
+    .then(r => r.ok ? r.json() : null)
+    .then(rows => { if (Array.isArray(rows) && rows.length) addLiveData(rows); })
+    .catch(() => {});
+})();
+function addLiveData(rows) {
+  const MAX_HOSTS = 1200;
+  const taken = new Set(STARS.map(s => s[0].toLowerCase()));
+  const curHostPos = STARS.filter(s => EXO[s[0]]).map(s => radecToVec(s[2], s[3], s[1]));
+  const hosts = new Map();
+  for (const r of rows) {
+    if (!r.hostname) continue;
+    if (hosts.size >= MAX_HOSTS && !hosts.has(r.hostname)) continue;
+    const a = +r.pl_orbsmax ||
+      (+r.pl_orbper ? Math.cbrt(Math.pow(r.pl_orbper/365.25, 2)) : 0);  // Kepler III, ~1 M☉
+    if (!a) continue;
+    let h = hosts.get(r.hostname);
+    if (!h) {
+      if (taken.has(r.hostname.toLowerCase())) continue;
+      const distLy = r.sy_dist*3.26156;
+      const v = radecToVec(+r.ra, +r.dec, distLy);
+      /* skip anything sitting on top of a curated host (alias spellings —
+         'Proxima Cen' vs 'Proxima Centauri' — would double the star) */
+      let dup = false;
+      for (const q of curHostPos) if (q.distanceToSquared(v) < 1.0) { dup = true; break; }
+      if (dup) continue;
+      const cls = ((r.st_spectype || '').trim().charAt(0) || '').toUpperCase();
+      h = { rec: [r.hostname, distLy, +r.ra, +r.dec, 'OBAFGKM'.includes(cls) && cls ? cls : 'K', 1,
+                  'NASA EXOPLANET ARCHIVE · LIVE DATA'],
+            pls: [], pos: v };
+      hosts.set(r.hostname, h);
+    }
+    const rade = +r.pl_rade;
+    const kind = rade < 1.3 ? 0 : rade < 2 ? 1 : rade < 4 ? 2 : (a < 0.1 ? 4 : 3);
+    const pname = (r.pl_name || '').replace(r.hostname, '').trim() || '?';
+    h.pls.push([pname, +a.toFixed(4), +rade.toFixed(2),
+                +(+r.pl_orbper || Math.pow(a, 1.5)*365.25).toFixed(2), kind]);
+  }
+  const arr = [...hosts.values()];
+  const n = arr.length;
+  if (!n) return;
+  let nP = 0;
+  const pos = new Float32Array(n*3), col = new Float32Array(n*3), sz = new Float32Array(n);
+  arr.forEach((h, i) => {
+    EXO[h.rec[0]] = h.pls; nP += h.pls.length;
+    LIVE_STARS.push(h.rec);
+    pos[i*3] = h.pos.x; pos[i*3+1] = h.pos.y; pos[i*3+2] = h.pos.z;
+    const c = new THREE.Color(SPEC_COL[h.rec[4]]).multiplyScalar(0.75);
+    col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
+    sz[i] = 2.3;
+    const o = new THREE.Object3D(); o.position.copy(h.pos);
+    starsBand.group.add(o);
+    starsBand.labels.push({ obj: o, name: h.rec[0].toUpperCase(), cls: 'dim', pri: 2.2,
+      minZ: Math.log10(h.rec[1]*KM.ly) - 1.1, maxZ: 15.5, star: h.rec, badge: h.pls.length });
+    PAL.push({ t: h.rec[0],
+      s: `${h.rec[4]}-CLASS · ${h.rec[1].toLocaleString(undefined,{maximumSignificantDigits:3})} LY · ⟡ ${h.pls.length}`,
+      g: 'STARS · LIVE ARCHIVE', fn: () => flyTo(h.rec) });
+  });
+  const pts = makePoints(pos, col, sz, 0.8);
+  starsBand.group.add(pts); starsBand.fade(pts.material, 0.8);
+  if (!tour && !flight) {
+    setCaption('Live data loaded',
+      `${nP.toLocaleString()} CONFIRMED PLANETS IN ${n.toLocaleString()} NEARBY SYSTEMS · NASA EXOPLANET ARCHIVE`, true);
+    setTimeout(() => { if (!tour) setCaption('', '', false); }, 4200);
+  }
+}
 </script>
 </body>
 </html>
