@@ -38,6 +38,15 @@ music tracks are original and generated live with WebAudio — drop
 `cosmos-epic.mp3` / `cosmos-drift.mp3` / `cosmos-tesseract.mp3` beside the
 file to override them.
 
+## The docking minigame
+Press **G** (or ⌘K → "Dock with the Endurance", or open `#dock`). The
+Endurance is in an uncontrolled spin, falling toward the stratosphere of a
+cloudy planet. Fly the Ranger in, match its rotation — the cockpit rolls with
+you, so when your spin locks the ship freezes and the stars wheel instead —
+centre up, and dock. Gently. Arrows/WASD/drag translate, **Q/E** roll,
+**SPACE** thrust, **⇧** brake, **R** retry, **ESC** gives up. Three bounces
+and the latches are gone; ~75 seconds until you both burn.
+
 ## Controls
 Scroll / pinch / **↑ ↓** = zoom · Drag / **← →** = look ·
 Click a named star or nebula = fly to it ·

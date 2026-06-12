@@ -114,6 +114,35 @@
   .prow .ps { font-size:9.5px; color:#6c7f99; letter-spacing:.12em; white-space:nowrap; }
   .pgroup { font-size:8.5px; letter-spacing:.3em; color:#4a5a72; padding:10px 12px 4px; }
 
+  /* ---- docking minigame ---- */
+  #dockHud { display:none; }
+  body.game #dockHud { display:block; }
+  body.game #hint, body.game #scaleHud, body.game #ladder, body.game #btns,
+  body.game #credit, body.game #card, body.game .olabel { display:none !important; }
+  #dockRing { position:fixed; left:50%; top:50%; width:150px; height:150px;
+    margin:-75px 0 0 -75px; border:1px dashed rgba(140,170,210,.45); border-radius:50%;
+    z-index:11; pointer-events:none; }
+  #dockRing.good { border-color:rgba(120,255,180,.75); }
+  #dockRing .tk { position:absolute; left:50%; transform:translateX(-50%);
+    color:#9fc8f0; font-size:9px; }
+  #dockRing .tk.b { bottom:-13px; } #dockRing .tk.t { top:-13px; }
+  #dockRing.good .tk { color:#8fe8b0; }
+  #dockStats { position:fixed; top:84px; left:26px; z-index:11; font-size:10px;
+    letter-spacing:.14em; color:#a9bcd6; line-height:2.1; min-width:208px;
+    background:rgba(10,16,26,.6); border:1px solid #263650; border-radius:10px;
+    padding:12px 16px; backdrop-filter:blur(8px); }
+  #dockStats b { color:#e8f0fa; font-weight:500; font-variant-numeric:tabular-nums; float:right; }
+  #dockStats b.ok { color:#8fe8b0; } #dockStats b.bad { color:#ff9a8a; }
+  #dockCtl { position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    display:flex; gap:8px; z-index:12; }
+  .dbtn { font-size:10px; letter-spacing:.18em; color:#9fb6d4; background:rgba(16,24,36,.6);
+    border:1px solid #2a3a52; border-radius:18px; padding:9px 16px; cursor:pointer;
+    user-select:none; -webkit-user-select:none; touch-action:none; backdrop-filter:blur(6px); }
+  .dbtn:active, .dbtn.held { color:#fff; border-color:#5b7ca8; background:rgba(40,60,90,.75); }
+  #dockFlash { position:fixed; inset:0; z-index:14; pointer-events:none; opacity:0;
+    transition:opacity .3s; background:radial-gradient(circle,
+    rgba(255,130,70,.5), rgba(140,20,0,.72)); }
+
   /* ---- mobile ---- */
   @media (max-width: 640px) {
     #title h1 { font-size:11px; letter-spacing:0.3em; }
@@ -175,6 +204,18 @@
   <div class="sub" id="cardSub"></div>
   <div id="cardRows"></div>
 </div>
+
+<div id="dockHud">
+  <div id="dockRing"><div class="tk t">▼</div><div class="tk b">▲</div></div>
+  <div id="dockStats"></div>
+  <div id="dockCtl">
+    <div class="dbtn" data-k="KeyQ">⟲ Q</div>
+    <div class="dbtn" data-k="KeyE">E ⟳</div>
+    <div class="dbtn" data-k="Space">THRUST · SPACE</div>
+    <div class="dbtn" data-k="ShiftLeft">BRAKE · ⇧</div>
+  </div>
+</div>
+<div id="dockFlash"></div>
 
 <div id="credit">REAL STAR &amp; EXOPLANET DATA (HIPPARCOS · LIVE NASA EXOPLANET ARCHIVE WHEN ONLINE) · RENDERED LIVE IN WEBGL</div>
 
@@ -2234,6 +2275,13 @@ canvas.addEventListener('pointerdown', e => {
 canvas.addEventListener('pointermove', e => {
   const p = ptrs.get(e.pointerId);
   if (!p) return;
+  if (dock.on) {                              // dragging = RCS translate
+    dock.vx += (e.clientX - p.x) * 0.03;
+    dock.vy -= (e.clientY - p.y) * 0.03;
+    if (dock.state === 'intro') dock.state = 'play';
+    p.x = e.clientX; p.y = e.clientY;
+    return;
+  }
   if (ptrs.size === 2) {
     p.x = e.clientX; p.y = e.clientY;
     const [a, b] = [...ptrs.values()];
@@ -2254,13 +2302,25 @@ addEventListener('pointerup', ptrEnd);
 addEventListener('pointercancel', ptrEnd);
 addEventListener('wheel', e => {
   if (e.target.closest && e.target.closest('#palette,#card')) return;  // let menus scroll
+  if (dock.on) { e.preventDefault(); return; }       // no zooming mid-dock
   e.preventDefault(); cancelTour();
   const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
   zoomT = clamp(zoomT + d * 0.0024, floorZ(), ZMAX);
 }, { passive: false });
+const DOCK_KEYS = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD',
+                   'KeyW','KeyS','KeyQ','KeyE','Space','ShiftLeft','ShiftRight'];
 addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK') { e.preventDefault(); togglePal(); return; }
   if (paletteEl.classList.contains('open')) { if (e.code === 'Escape') closePal(); return; }
+  if (dock.on) {                              // the minigame owns the keyboard
+    if (e.code === 'Escape') { endDock(); return; }
+    if (e.code === 'KeyR') { resetDock(); return; }
+    if (e.code === 'KeyM') { cycleMusic(); return; }
+    if (e.code === 'KeyB') { toggleBloom(); return; }
+    if (DOCK_KEYS.includes(e.code)) { e.preventDefault(); dock.keys.add(e.code); }
+    return;
+  }
+  if (e.code === 'KeyG') { startDock(); return; }
   if (e.code === 'Space') { e.preventDefault(); tour ? endTour() : startTour(); }
   if (e.code === 'Escape') {
     if (anchorName !== 'SOL') flyTo('SOL');
@@ -2693,6 +2753,7 @@ function applyHash() {
     return;
   }
   if (slug(h) === 'tour') { startTour(); return; }
+  if (slug(h) === 'dock' || slug(h) === 'endurance') { startDock(); return; }
   const rec = findBySlug(slug(h));
   if (rec) goToFound(rec);
 }
@@ -2703,7 +2764,7 @@ setTimeout(applyHash, 900);
    only — no history spam, no hashchange feedback loop) */
 let lastViewHash = '';
 setInterval(() => {
-  if (tour || flight || document.hidden) return;
+  if (tour || flight || dock.on || document.hidden) return;
   const a = anchorName !== 'SOL' ? ',' + slug(anchorName) : '';
   const h = '#v=' + zoomT.toFixed(2) + ',' + yawT.toFixed(3) + ',' + pitchT.toFixed(3) + a;
   if (h !== lastViewHash) {
@@ -2751,6 +2812,13 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min((now - last)/1000, 0.05); last = now;
   frameDT = dt;
+  if (dock.on) {                             // the minigame pauses the cosmos
+    stepDock(dt);
+    if (bloomOn && bloomFX) bloomFX.render();
+    else { renderer.setRenderTarget(null); renderer.render(scene, camera); }
+    if (wantShot) { wantShot = false; saveShot(); }
+    return;
+  }
   const adt = dt * TIME_MODES[timeMode][0];  // time control scales all celestial motion
   if (!focusPlanet) simYears += adt / 75;    // orbits also pause while you stand on a world
 
@@ -2885,6 +2953,257 @@ function addLiveData(rows) {
     setTimeout(() => { if (!tour) setCaption('', '', false); }, 4200);
   }
 }
+
+/* ========================= DOCKING MINIGAME ===============================
+   The Endurance is in an uncontrolled spin, falling toward a planet's
+   stratosphere. Take the Ranger in, match its rotation, centre up, and dock
+   before you both burn. G / ⌘K "Dock" / #dock to play, ESC to leave.
+
+   The trick that sells it: the camera rolls WITH the Ranger, so when your
+   spin matches the Endurance it appears to freeze while the stars wheel
+   around you — exactly the moment from the film.                           */
+const DOCK_Z = 4.6;                          // contact: ranger nose at hub port
+const dock = { on:false, grp:null, keys:new Set(), prevMusic:0, t:0 };
+const dockStatsEl = document.getElementById('dockStats');
+const dockRingEl = document.getElementById('dockRing');
+const dockFlashEl = document.getElementById('dockFlash');
+
+function buildDockScene() {
+  const g = new THREE.Group(); g.visible = false; scene.add(g); dock.grp = g;
+  const key = new THREE.DirectionalLight(0xfff0dd, 0.95); key.position.set(40, 60, 50); g.add(key);
+  const fill = new THREE.DirectionalLight(0x88aaff, 0.3); fill.position.set(-30, -20, 35); g.add(fill);
+
+  /* the planet below — cloudy, white, patient */
+  const pMat = new THREE.MeshLambertMaterial({ map: planetTexture('ice', 0x97a8b6) });
+  dock.planet = new THREE.Mesh(new THREE.SphereGeometry(1100, 64, 48), pMat);
+  g.add(dock.planet);
+  const aMat = new THREE.ShaderMaterial({
+    uniforms: { uOpacity: { value: 1 } },
+    vertexShader: SPHERE_VERT,
+    fragmentShader: `uniform float uOpacity; varying vec3 vWN; varying vec3 vWP;
+      void main(){ vec3 v = normalize(cameraPosition - vWP);
+        float rim = pow(1.0 - abs(dot(normalize(vWN), v)), 3.0);
+        gl_FragColor = vec4(vec3(0.5,0.72,1.0), rim * 0.8 * uOpacity); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  dock.atmo = new THREE.Mesh(new THREE.SphereGeometry(1100*1.035, 64, 48), aMat);
+  dock.planet.add(dock.atmo);
+
+  /* THE ENDURANCE — ring of 12 modules, one blown clean off, two charred */
+  const E = new THREE.Group(); g.add(E); dock.endur = E;
+  const hull = new THREE.MeshLambertMaterial({ color: 0x8f969e });
+  const charred = new THREE.MeshLambertMaterial({ color: 0x2e3238 });
+  E.add(new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.26, 10, 64), hull));
+  const winP = [], winC = [];
+  for (let i = 0; i < 12; i++) {
+    if (i === 4) continue;                   // the module that exploded
+    const a = i/12*6.2832;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.45, 1.45),
+      (i === 3 || i === 5) ? charred : hull);
+    m.position.set(Math.cos(a)*5.6, Math.sin(a)*5.6, 0);
+    m.rotation.z = a;
+    E.add(m);
+    if (i !== 3 && i !== 5) {                // lit windows on intact modules
+      winP.push(Math.cos(a)*5.6 - Math.sin(a)*0.4, Math.sin(a)*5.6 + Math.cos(a)*0.4, 0.74);
+      winC.push(1, 0.86, 0.6);
+      winP.push(Math.cos(a)*5.6 + Math.sin(a)*0.4, Math.sin(a)*5.6 - Math.cos(a)*0.4, 0.74);
+      winC.push(1, 0.86, 0.6);
+    }
+  }
+  const wins = makePoints(new Float32Array(winP), new Float32Array(winC),
+    new Float32Array(winP.length/3).fill(2.6), 0.9);
+  E.add(wins);
+  for (let s = 0; s < 4; s++) {              // spokes to the central hub
+    const a = s/4*6.2832 + 0.262;
+    const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 5.0, 8), hull);
+    sp.position.set(Math.cos(a)*2.8, Math.sin(a)*2.8, 0);
+    sp.rotation.z = a + Math.PI/2;
+    E.add(sp);
+  }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2.4, 16), hull);
+  hub.rotation.x = Math.PI/2; E.add(hub);
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.16, 8, 24),
+    new THREE.MeshLambertMaterial({ color: 0x8a929c }));
+  collar.position.z = 1.3; E.add(collar);
+  const pLight = makePoints(new Float32Array([0, 0, 1.55]),
+    new Float32Array([0.5, 1, 0.7]), new Float32Array([4.5]), 0.95);
+  E.add(pLight); dock.portLight = pLight;
+
+  /* THE RANGER — sleek wedge, nose toward the port */
+  const R = new THREE.Group(); g.add(R); dock.ranger = R;
+  const rHull = new THREE.MeshLambertMaterial({ color: 0x99a0a8 });
+  const fus = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.05, 4.2, 10), rHull);
+  fus.rotation.x = -Math.PI/2; fus.scale.x = 1.6; fus.scale.z = 0.42; R.add(fus);
+  for (const sx of [-1, 1]) {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, 2.2), rHull);
+    wing.position.set(sx*1.55, 0, 0.6); wing.rotation.y = sx*0.25; R.add(wing);
+  }
+  const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.24, 0.8),
+    new THREE.MeshBasicMaterial({ color: 0x9fd8ff }));
+  cockpit.position.set(0, 0.26, -1.1); R.add(cockpit);
+  const engMat = new THREE.SpriteMaterial({ map: TEX_GLOW, color: 0x9fc8ff,
+    transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const eng = new THREE.Sprite(engMat); eng.scale.setScalar(2.6); eng.position.z = 2.4;
+  R.add(eng); dock.engine = engMat;
+}
+
+function resetDock() {
+  Object.assign(dock, { t: 0, state: 'intro', x: 7, y: 4, z: 50,
+    vx: 0, vy: 0, vz: 0, roll: 0, vroll: 0,
+    endA: 0, endRate: 1.05,                  // ≈ 10 RPM
+    altT0: 75, altT: 75, dmg: 0, saidIt: false, doneT: 0 });
+  dock.keys.clear();
+  dockFlashEl.style.opacity = 0;
+  setCaption('The Endurance is in an uncontrolled spin',
+    'ARROWS / WASD / DRAG — TRANSLATE · Q E — ROLL · SPACE — THRUST · ⇧ — BRAKE · MATCH THE SPIN AND DOCK', true);
+}
+function startDock() {
+  if (dock.on) return;
+  cancelTour(); clearFocus(); hideCard(); closePal(); flight = null;
+  if (!dock.grp) buildDockScene();
+  dock.on = true;
+  dock.grp.visible = true;
+  document.body.classList.add('game');
+  for (const b of BANDS) b.group.visible = false;
+  SKY.material.uniforms.uOpacity.value = 0.85;
+  sunLight.intensity = 0;                    // the scene-level sun sits at origin — inside the ship
+  renderer.setClearColor(0x000005, 1);
+  dock.prevMusic = music.mode;
+  if (!music.userOff && music.mode !== 3) setMusic(3);   // the organ, with its ticking clock
+  resetDock();
+  try { history.replaceState(null, '', '#dock'); } catch (e) {}
+}
+function endDock() {
+  if (!dock.on) return;
+  dock.on = false;
+  dock.grp.visible = false;
+  document.body.classList.remove('game');
+  sunLight.intensity = 1.25;
+  if (music.mode === 3 && dock.prevMusic !== 3) setMusic(dock.prevMusic);
+  setCaption('', '', false);
+  dockFlashEl.style.opacity = 0;
+}
+function dockFlash(o) {
+  dockFlashEl.style.opacity = o;
+  if (o > 0 && o < 0.6) setTimeout(() => { if (dock.on && dock.state !== 'lost') dockFlashEl.style.opacity = 0; }, 350);
+}
+
+function stepDock(dt) {
+  const D = dock; D.t += dt;
+  const k = D.keys;
+  const live = D.state === 'play' || D.state === 'intro';
+  if (D.state === 'intro' && k.size) { D.state = 'play'; setCaption('', '', false); }
+  if (live) {
+    const acc = 7.5;
+    if (k.has('ArrowLeft') || k.has('KeyA'))  D.vx -= acc*dt;
+    if (k.has('ArrowRight') || k.has('KeyD')) D.vx += acc*dt;
+    if (k.has('ArrowUp') || k.has('KeyW'))    D.vy += acc*dt;
+    if (k.has('ArrowDown') || k.has('KeyS'))  D.vy -= acc*dt;
+    if (k.has('KeyQ')) D.vroll += 1.15*dt;
+    if (k.has('KeyE')) D.vroll -= 1.15*dt;
+    const thrusting = k.has('Space');
+    if (thrusting) D.vz -= 3.4*dt;
+    if (k.has('ShiftLeft') || k.has('ShiftRight')) D.vz += 3.0*dt;
+    D.engine.opacity = thrusting ? 0.85 : 0.12;
+    D.vx -= D.vx*1.15*dt; D.vy -= D.vy*1.15*dt;        // RCS damping
+    D.vz = clamp(D.vz, -5.5, 3.5);
+    D.x = clamp(D.x + D.vx*dt, -17, 17);
+    D.y = clamp(D.y + D.vy*dt, -17, 17);
+    D.z = Math.min(D.z + D.vz*dt, 58);
+    D.roll += D.vroll*dt;
+  }
+  D.endA += D.endRate*dt;
+  D.endur.rotation.z = D.endA;
+  D.endur.rotation.x = 0.15 + (REDUCED ? 0 : 0.05*Math.sin(D.t*0.4));
+
+  /* falling toward the stratosphere */
+  if (D.state === 'play') D.altT = Math.max(0, D.altT - dt);
+  const sink = 1 - D.altT/D.altT0;
+  D.planet.position.set(0, -1100 - 122 + sink*98, -16);
+  D.atmo.material.uniforms.uOpacity.value = 0.7 + sink*1.3;
+
+  /* the film moment: first time the spin locks */
+  if (D.state === 'play' && !D.saidIt && D.t > 4 && Math.abs(D.vroll - D.endRate) < 0.3) {
+    D.saidIt = true;
+    setCaption('“It’s not possible.”', '“NO. IT’S NECESSARY.”', true);
+    setTimeout(() => { if (dock.on && dock.state === 'play') setCaption('', '', false); }, 2600);
+  }
+
+  /* contact */
+  if (D.state === 'play' && D.z <= DOCK_Z) {
+    const off = Math.hypot(D.x, D.y), rel = Math.abs(D.vroll - D.endRate), closing = -D.vz;
+    if (off < 1.0 && rel < 0.35 && closing < 2.2) {
+      D.state = 'won'; D.doneT = 0;
+      D.rollOff = D.roll - D.endA;
+      D.engine.opacity = 0;
+      setCaption('Docking confirmed', 'GENTLE, COOPER · ESC TO RETURN TO THE COSMOS', true);
+    } else {
+      const why = [off >= 1.0 && 'OFF CENTRE', rel >= 0.35 && 'SPIN MISMATCH',
+                   closing >= 2.2 && 'TOO FAST'].filter(Boolean).join(' · ');
+      D.z = DOCK_Z + 0.25;
+      D.vz = Math.max(1.5, -D.vz*0.55);
+      D.vx += D.x*0.4; D.vy += D.y*0.4;
+      D.dmg++;
+      dockFlash(0.45);
+      if (D.dmg >= 3) {
+        D.state = 'lost';
+        setCaption('The latches are destroyed', 'R — TRY AGAIN · ESC — LEAVE', true);
+      } else {
+        setCaption('Contact — latches missed', why + ` · ${3 - D.dmg} LEFT`, true);
+        setTimeout(() => { if (dock.on && dock.state === 'play') setCaption('', '', false); }, 2200);
+      }
+    }
+  }
+  if (D.altT <= 0 && D.state === 'play') {
+    D.state = 'lost';
+    dockFlashEl.style.opacity = 0.7;
+    setCaption('You hit the stratosphere', 'THE ENDURANCE IS GONE · R — TRY AGAIN · ESC — LEAVE', true);
+  }
+  if (D.state === 'won') {
+    D.doneT += dt;                            // ride the spin, pulled onto the port
+    D.x = lerp(D.x, 0, Math.min(1, dt*3)); D.y = lerp(D.y, 0, Math.min(1, dt*3));
+    D.z = lerp(D.z, DOCK_Z - 0.3, Math.min(1, dt*3));
+    D.roll = D.endA + D.rollOff;
+    D.vroll = D.endRate;
+    if (D.doneT > 7) endDock();
+  }
+
+  /* place everything */
+  D.ranger.position.set(D.x, D.y, D.z);
+  D.ranger.rotation.z = D.roll;
+  camera.position.set(D.x, D.y + 2.0, D.z + 10.5);
+  if (REDUCED) camera.up.set(0, 1, 0);
+  else camera.up.set(Math.sin(D.roll), Math.cos(D.roll), 0);   // roll with the Ranger
+  camera.lookAt(D.x*0.5, D.y*0.5, 0);
+
+  /* HUD */
+  const relRate = D.vroll - D.endRate, off = Math.hypot(D.x, D.y);
+  const spinOK = Math.abs(relRate) < 0.35, offOK = off < 1.0, clsOK = -D.vz < 2.2;
+  dockRingEl.style.transform = `rotate(${(-(D.endA - D.roll)*57.2958) % 360}deg)`;
+  dockRingEl.classList.toggle('good', spinOK);
+  const cl = ok => ok ? 'ok' : 'bad';
+  dockStatsEl.innerHTML =
+    `<div>ENDURANCE SPIN <b>${(D.endRate*9.5493).toFixed(1)} RPM</b></div>` +
+    `<div>RANGER SPIN <b class="${cl(spinOK)}">${(D.vroll*9.5493).toFixed(1)} RPM</b></div>` +
+    `<div>OFFSET <b class="${cl(offOK)}">${off.toFixed(1)} m</b></div>` +
+    `<div>RANGE <b>${Math.max(0, D.z - DOCK_Z).toFixed(1)} m</b></div>` +
+    `<div>CLOSING <b class="${cl(clsOK)}">${(-D.vz).toFixed(2)} m/s</b></div>` +
+    `<div>STRATOSPHERE <b class="${D.altT < 20 ? 'bad' : ''}">T−${Math.ceil(D.altT)} s</b></div>` +
+    `<div>AIRFRAME <b>${'▮'.repeat(3 - D.dmg)}${'▯'.repeat(D.dmg)}</b></div>`;
+}
+
+/* game inputs: held keys, on-screen buttons, drag = translate */
+addEventListener('keyup', e => { if (dock.on) dock.keys.delete(e.code); });
+for (const b of document.querySelectorAll('.dbtn')) {
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault(); dock.keys.add(b.dataset.k); b.classList.add('held');
+    if (dock.state === 'intro') dock.state = 'play';
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave'])
+    b.addEventListener(ev, () => { dock.keys.delete(b.dataset.k); b.classList.remove('held'); });
+}
+PAL.push({ t:'🚀 Dock with the Endurance', s:'MINIGAME · MATCH THE SPIN (G)', g:'ACTIONS',
+  fn: () => startDock() });
+window.__dock = dock;     // exposed for tinkering (difficulty, spin rate, …)
 </script>
 </body>
 </html>
