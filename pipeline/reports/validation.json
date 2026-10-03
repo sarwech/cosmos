@@ -1,0 +1,1231 @@
+{
+ "1_sky_matches_cosmos": {
+  "pass": false,
+  "n": 89,
+  "found": 89,
+  "n_gaia": 39,
+  "n_outside_tolerance": 8,
+  "diagnosis": {
+   "cosmos_coordinate_errors": [
+    "YZ Ceti",
+    "Kruger 60",
+    "Wolf 1061",
+    "LHS 1140",
+    "GJ 504",
+    "TOI-700",
+    "Kepler-186",
+    "Kepler-452"
+   ],
+   "pipeline_disagrees_with_simbad": [],
+   "median_sep_deg": 0.00389
+  },
+  "max_sep_deg": 7.29966,
+  "worst": "LHS 1140",
+  "max_sep_gaia_deg": 7.29966,
+  "criterion": "all stars found; direction within 0.02\u00b0 (distances reported, not gating)",
+  "stars": [
+   {
+    "name": "Proxima Centauri",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00071,
+    "dist_ly": 4.25,
+    "cosmos_dist_ly": 4.24,
+    "dist_ratio": 1.001,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.0007
+   },
+   {
+    "name": "Alpha Centauri A",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00412,
+    "dist_ly": 4.32,
+    "cosmos_dist_ly": 4.37,
+    "dist_ratio": 0.988,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00412
+   },
+   {
+    "name": "Alpha Centauri B",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.01191,
+    "dist_ly": 4.09,
+    "cosmos_dist_ly": 4.37,
+    "dist_ratio": 0.936,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.01191
+   },
+   {
+    "name": "Barnard's Star",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00399,
+    "dist_ly": 5.96,
+    "cosmos_dist_ly": 5.96,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 5e-05,
+    "cosmos_vs_simbad_deg": 0.00395
+   },
+   {
+    "name": "Wolf 359",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00475,
+    "dist_ly": 7.85,
+    "cosmos_dist_ly": 7.86,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00475
+   },
+   {
+    "name": "Lalande 21185",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00336,
+    "dist_ly": 8.3,
+    "cosmos_dist_ly": 8.31,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.00336
+   },
+   {
+    "name": "Sirius",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00474,
+    "dist_ly": 8.6,
+    "cosmos_dist_ly": 8.66,
+    "dist_ratio": 0.993,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00474
+   },
+   {
+    "name": "UV Ceti",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00304,
+    "dist_ly": 8.73,
+    "cosmos_dist_ly": 8.79,
+    "dist_ratio": 0.993,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00303
+   },
+   {
+    "name": "Ross 154",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00546,
+    "dist_ly": 9.7,
+    "cosmos_dist_ly": 9.7,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00546
+   },
+   {
+    "name": "Ross 248",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.0026,
+    "dist_ly": 10.3,
+    "cosmos_dist_ly": 10.3,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.0026
+   },
+   {
+    "name": "Epsilon Eridani",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00317,
+    "dist_ly": 10.49,
+    "cosmos_dist_ly": 10.45,
+    "dist_ratio": 1.004,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00317
+   },
+   {
+    "name": "Lacaille 9352",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00401,
+    "dist_ly": 10.72,
+    "cosmos_dist_ly": 10.74,
+    "dist_ratio": 0.998,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00401
+   },
+   {
+    "name": "Ross 128",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00678,
+    "dist_ly": 10.94,
+    "cosmos_dist_ly": 11.01,
+    "dist_ratio": 0.994,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.00677
+   },
+   {
+    "name": "61 Cygni A",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00375,
+    "dist_ly": 11.4,
+    "cosmos_dist_ly": 11.4,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.00375
+   },
+   {
+    "name": "Procyon",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00671,
+    "dist_ly": 11.46,
+    "cosmos_dist_ly": 11.46,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00671
+   },
+   {
+    "name": "Epsilon Indi",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00402,
+    "dist_ly": 11.87,
+    "cosmos_dist_ly": 11.87,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00402
+   },
+   {
+    "name": "Tau Ceti",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00382,
+    "dist_ly": 11.9,
+    "cosmos_dist_ly": 11.91,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00382
+   },
+   {
+    "name": "GJ 1061",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.0068,
+    "dist_ly": 11.98,
+    "cosmos_dist_ly": 11.98,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.0068
+   },
+   {
+    "name": "YZ Ceti",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.04903,
+    "dist_ly": 12.04,
+    "cosmos_dist_ly": 12.11,
+    "dist_ratio": 0.994,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.04904
+   },
+   {
+    "name": "Luyten's Star",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00469,
+    "dist_ly": 12.35,
+    "cosmos_dist_ly": 12.2,
+    "dist_ratio": 1.012,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00469
+   },
+   {
+    "name": "Teegarden's Star",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00378,
+    "dist_ly": 12.5,
+    "cosmos_dist_ly": 12.5,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.00378
+   },
+   {
+    "name": "Kapteyn's Star",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00172,
+    "dist_ly": 12.83,
+    "cosmos_dist_ly": 12.83,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 4e-05,
+    "cosmos_vs_simbad_deg": 0.00168
+   },
+   {
+    "name": "Lacaille 8760",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00386,
+    "dist_ly": 12.95,
+    "cosmos_dist_ly": 12.95,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00386
+   },
+   {
+    "name": "Kruger 60",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.15442,
+    "dist_ly": 13.05,
+    "cosmos_dist_ly": 13.07,
+    "dist_ratio": 0.998,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.15442
+   },
+   {
+    "name": "Wolf 1061",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.47298,
+    "dist_ly": 14.05,
+    "cosmos_dist_ly": 14.05,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.47298
+   },
+   {
+    "name": "Gliese 876",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00631,
+    "dist_ly": 15.23,
+    "cosmos_dist_ly": 15.24,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00631
+   },
+   {
+    "name": "Gliese 832",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00143,
+    "dist_ly": 16.2,
+    "cosmos_dist_ly": 16.19,
+    "dist_ratio": 1.001,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00143
+   },
+   {
+    "name": "40 Eridani",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00349,
+    "dist_ly": 16.25,
+    "cosmos_dist_ly": 16.34,
+    "dist_ratio": 0.995,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00349
+   },
+   {
+    "name": "Altair",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00445,
+    "dist_ly": 16.73,
+    "cosmos_dist_ly": 16.73,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00445
+   },
+   {
+    "name": "AD Leonis",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.0011,
+    "dist_ly": 16.19,
+    "cosmos_dist_ly": 16.2,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.0011
+   },
+   {
+    "name": "70 Ophiuchi",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00369,
+    "dist_ly": 16.58,
+    "cosmos_dist_ly": 16.59,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00369
+   },
+   {
+    "name": "Sigma Draconis",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00118,
+    "dist_ly": 18.77,
+    "cosmos_dist_ly": 18.77,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00118
+   },
+   {
+    "name": "Gliese 581",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00288,
+    "dist_ly": 20.54,
+    "cosmos_dist_ly": 20.55,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00288
+   },
+   {
+    "name": "Gliese 667",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00792,
+    "dist_ly": 23.62,
+    "cosmos_dist_ly": 23.62,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00792
+   },
+   {
+    "name": "Vega",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00522,
+    "dist_ly": 25.04,
+    "cosmos_dist_ly": 25.04,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00522
+   },
+   {
+    "name": "Fomalhaut",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00324,
+    "dist_ly": 25.13,
+    "cosmos_dist_ly": 25.13,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00324
+   },
+   {
+    "name": "AU Microscopii",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00093,
+    "dist_ly": 31.67,
+    "cosmos_dist_ly": 31.68,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00093
+   },
+   {
+    "name": "GJ 357",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00306,
+    "dist_ly": 30.76,
+    "cosmos_dist_ly": 30.79,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00306
+   },
+   {
+    "name": "Pollux",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00391,
+    "dist_ly": 33.78,
+    "cosmos_dist_ly": 33.78,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00391
+   },
+   {
+    "name": "Denebola",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00518,
+    "dist_ly": 35.88,
+    "cosmos_dist_ly": 35.88,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00518
+   },
+   {
+    "name": "Arcturus",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00505,
+    "dist_ly": 36.72,
+    "cosmos_dist_ly": 36.71,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00505
+   },
+   {
+    "name": "TRAPPIST-1",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00274,
+    "dist_ly": 40.62,
+    "cosmos_dist_ly": 40.66,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00274
+   },
+   {
+    "name": "55 Cancri",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00108,
+    "dist_ly": 41.03,
+    "cosmos_dist_ly": 41.06,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00107
+   },
+   {
+    "name": "Capella",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00162,
+    "dist_ly": 42.81,
+    "cosmos_dist_ly": 42.92,
+    "dist_ratio": 0.997,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00162
+   },
+   {
+    "name": "Upsilon And",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00457,
+    "dist_ly": 44.0,
+    "cosmos_dist_ly": 44.03,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00457
+   },
+   {
+    "name": "GJ 1214",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00406,
+    "dist_ly": 47.73,
+    "cosmos_dist_ly": 47.78,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00406
+   },
+   {
+    "name": "LHS 1140",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 7.29966,
+    "dist_ly": 48.8,
+    "cosmos_dist_ly": 48.81,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 7.29966
+   },
+   {
+    "name": "51 Pegasi",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.0034,
+    "dist_ly": 50.63,
+    "cosmos_dist_ly": 50.45,
+    "dist_ratio": 1.003,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.0034
+   },
+   {
+    "name": "Mu Arae",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00466,
+    "dist_ly": 50.86,
+    "cosmos_dist_ly": 50.61,
+    "dist_ratio": 1.005,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00466
+   },
+   {
+    "name": "Castor",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00178,
+    "dist_ly": 50.87,
+    "cosmos_dist_ly": 50.98,
+    "dist_ratio": 0.998,
+    "ours_vs_simbad_deg": 4e-05,
+    "cosmos_vs_simbad_deg": 0.00179
+   },
+   {
+    "name": "GJ 504",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 1.00014,
+    "dist_ly": 57.32,
+    "cosmos_dist_ly": 57.32,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 1.00014
+   },
+   {
+    "name": "Pi Mensae",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.0009,
+    "dist_ly": 59.64,
+    "cosmos_dist_ly": 59.62,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.0009
+   },
+   {
+    "name": "Beta Pictoris",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00357,
+    "dist_ly": 63.41,
+    "cosmos_dist_ly": 63.45,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00357
+   },
+   {
+    "name": "HD 189733",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00215,
+    "dist_ly": 64.46,
+    "cosmos_dist_ly": 64.53,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00215
+   },
+   {
+    "name": "Aldebaran",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00072,
+    "dist_ly": 66.65,
+    "cosmos_dist_ly": 65.3,
+    "dist_ratio": 1.021,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00071
+   },
+   {
+    "name": "Regulus",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00402,
+    "dist_ly": 79.3,
+    "cosmos_dist_ly": 79.3,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00402
+   },
+   {
+    "name": "Alioth",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00153,
+    "dist_ly": 82.55,
+    "cosmos_dist_ly": 81.0,
+    "dist_ratio": 1.019,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00153
+   },
+   {
+    "name": "Merak",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00243,
+    "dist_ly": 79.74,
+    "cosmos_dist_ly": 79.7,
+    "dist_ratio": 1.001,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.00244
+   },
+   {
+    "name": "Phecda",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00495,
+    "dist_ly": 83.18,
+    "cosmos_dist_ly": 83.2,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00495
+   },
+   {
+    "name": "Megrez",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00323,
+    "dist_ly": 80.51,
+    "cosmos_dist_ly": 80.5,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00324
+   },
+   {
+    "name": "Saiph",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00095,
+    "dist_ly": 647.14,
+    "cosmos_dist_ly": 650.0,
+    "dist_ratio": 0.996,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00095
+   },
+   {
+    "name": "Mizar",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00472,
+    "dist_ly": 85.81,
+    "cosmos_dist_ly": 82.9,
+    "dist_ratio": 1.035,
+    "ours_vs_simbad_deg": 1e-05,
+    "cosmos_vs_simbad_deg": 0.00471
+   },
+   {
+    "name": "Gacrux",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00332,
+    "dist_ly": 88.56,
+    "cosmos_dist_ly": 88.6,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00331
+   },
+   {
+    "name": "Algol",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00467,
+    "dist_ly": 89.92,
+    "cosmos_dist_ly": 90.0,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00466
+   },
+   {
+    "name": "TOI-700",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.41931,
+    "dist_ly": 101.53,
+    "cosmos_dist_ly": 101.16,
+    "dist_ratio": 1.004,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.41931
+   },
+   {
+    "name": "Alkaid",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00454,
+    "dist_ly": 103.94,
+    "cosmos_dist_ly": 103.9,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00454
+   },
+   {
+    "name": "Dubhe",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00139,
+    "dist_ly": 122.89,
+    "cosmos_dist_ly": 123.0,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00139
+   },
+   {
+    "name": "K2-18",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00167,
+    "dist_ly": 124.23,
+    "cosmos_dist_ly": 124.02,
+    "dist_ratio": 1.002,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00167
+   },
+   {
+    "name": "HR 8799",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00426,
+    "dist_ly": 128.51,
+    "cosmos_dist_ly": 133.3,
+    "dist_ratio": 0.964,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00427
+   },
+   {
+    "name": "Achernar",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00334,
+    "dist_ly": 139.44,
+    "cosmos_dist_ly": 139.0,
+    "dist_ratio": 1.003,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00334
+   },
+   {
+    "name": "Hamal",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00392,
+    "dist_ly": 65.81,
+    "cosmos_dist_ly": 65.8,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00392
+   },
+   {
+    "name": "HD 209458",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00633,
+    "dist_ly": 156.79,
+    "cosmos_dist_ly": 159.0,
+    "dist_ratio": 0.986,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00633
+   },
+   {
+    "name": "Mira",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00411,
+    "dist_ly": 298.96,
+    "cosmos_dist_ly": 299.0,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00411
+   },
+   {
+    "name": "Spica",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00217,
+    "dist_ly": 249.74,
+    "cosmos_dist_ly": 250.0,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00217
+   },
+   {
+    "name": "Bellatrix",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00276,
+    "dist_ly": 252.44,
+    "cosmos_dist_ly": 250.0,
+    "dist_ratio": 1.01,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00276
+   },
+   {
+    "name": "Canopus",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00451,
+    "dist_ly": 309.15,
+    "cosmos_dist_ly": 310.0,
+    "dist_ratio": 0.997,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00451
+   },
+   {
+    "name": "Acrux",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00093,
+    "dist_ly": 321.97,
+    "cosmos_dist_ly": 320.0,
+    "dist_ratio": 1.006,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00093
+   },
+   {
+    "name": "Polaris",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00411,
+    "dist_ly": 432.57,
+    "cosmos_dist_ly": 433.0,
+    "dist_ratio": 0.999,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00411
+   },
+   {
+    "name": "Antares",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00264,
+    "dist_ly": 553.75,
+    "cosmos_dist_ly": 554.0,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00264
+   },
+   {
+    "name": "Betelgeuse",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00414,
+    "dist_ly": 497.95,
+    "cosmos_dist_ly": 548.0,
+    "dist_ratio": 0.909,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00414
+   },
+   {
+    "name": "Kepler-186",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.02026,
+    "dist_ly": 575.05,
+    "cosmos_dist_ly": 579.23,
+    "dist_ratio": 0.993,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.02026
+   },
+   {
+    "name": "Rigel",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00472,
+    "dist_ly": 862.85,
+    "cosmos_dist_ly": 863.0,
+    "dist_ratio": 1.0,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00472
+   },
+   {
+    "name": "Mintaka",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.0019,
+    "dist_ly": 692.48,
+    "cosmos_dist_ly": 1200.0,
+    "dist_ratio": 0.577,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.0019
+   },
+   {
+    "name": "Alnilam",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00389,
+    "dist_ly": 1976.71,
+    "cosmos_dist_ly": 1340.0,
+    "dist_ratio": 1.475,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00389
+   },
+   {
+    "name": "Alnitak",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00259,
+    "dist_ly": 736.25,
+    "cosmos_dist_ly": 1260.0,
+    "dist_ratio": 0.584,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00259
+   },
+   {
+    "name": "WASP-12",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00371,
+    "dist_ly": 1321.8,
+    "cosmos_dist_ly": 1410.0,
+    "dist_ratio": 0.937,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00371
+   },
+   {
+    "name": "Kepler-452",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.06899,
+    "dist_ly": 1781.2,
+    "cosmos_dist_ly": 1810.0,
+    "dist_ratio": 0.984,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.069
+   },
+   {
+    "name": "Deneb",
+    "found": true,
+    "source": "Hipparcos",
+    "sep_deg": 0.00146,
+    "dist_ly": 1411.93,
+    "cosmos_dist_ly": 2615.0,
+    "dist_ratio": 0.54,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00146
+   },
+   {
+    "name": "Kepler-90",
+    "found": true,
+    "source": "Gaia DR3",
+    "sep_deg": 0.00537,
+    "dist_ly": 2726.67,
+    "cosmos_dist_ly": 2840.0,
+    "dist_ratio": 0.96,
+    "ours_vs_simbad_deg": 0.0,
+    "cosmos_vs_simbad_deg": 0.00537
+   }
+  ]
+ },
+ "2_barnards_star": {
+  "pass": true,
+  "min_dist_ly": 3.7678,
+  "t_years": 9720,
+  "calendar_year_CE": 11736,
+  "today_ly": 5.9625,
+  "criterion": "3.7\u20133.8 ly at +9,500\u201310,000 yr"
+ },
+ "3_gliese_710": {
+  "pass": true,
+  "min_dist_pc": 0.05155,
+  "min_dist_au": 10633,
+  "t_myr": 1.2934,
+  "straight_line_min_pc": 0.05117,
+  "straight_line_t_myr": 1.2931,
+  "today_pc": 19.07,
+  "criterion": "0.045\u20130.07 pc at +1.25\u20131.35 Myr"
+ },
+ "4_big_dipper": {
+  "pass": true,
+  "member_dev_kms": {
+   "Merak": 1.09,
+   "Phecda": 1.28,
+   "Megrez": 3.32,
+   "Alioth": 1.97,
+   "Mizar": 3.44
+  },
+  "outlier_dev_kms": {
+   "Dubhe": 36.0,
+   "Alkaid": 33.48
+  },
+  "sources": {
+   "Merak": "Hipparcos+XHIP",
+   "Phecda": "Hipparcos+XHIP",
+   "Megrez": "Hipparcos+XHIP",
+   "Alioth": "Hipparcos+XHIP",
+   "Mizar": "Hipparcos+XHIP",
+   "Dubhe": "Hipparcos+XHIP",
+   "Alkaid": "Hipparcos+XHIP"
+  },
+  "group_velocity_kms": [
+   14.95,
+   2.35,
+   -9.07
+  ],
+  "criterion": "members within 4.0 km/s of their mean, Dubhe & Alkaid \u2265 10.0 km/s away",
+  "sky_radec_deg": {
+   "0 kyr": {
+    "Merak": [
+     165.461,
+     56.383
+    ],
+    "Phecda": [
+     178.459,
+     53.695
+    ],
+    "Megrez": [
+     183.857,
+     57.033
+    ],
+    "Alioth": [
+     193.508,
+     55.96
+    ],
+    "Mizar": [
+     200.982,
+     54.925
+    ],
+    "Dubhe": [
+     165.931,
+     61.751
+    ],
+    "Alkaid": [
+     206.884,
+     49.313
+    ]
+   },
+   "50 kyr": {
+    "Merak": [
+     167.587,
+     56.843
+    ],
+    "Phecda": [
+     181.054,
+     53.824
+    ],
+    "Megrez": [
+     186.607,
+     57.107
+    ],
+    "Alioth": [
+     196.347,
+     55.81
+    ],
+    "Mizar": [
+     203.866,
+     54.526
+    ],
+    "Dubhe": [
+     162.012,
+     61.206
+    ],
+    "Alkaid": [
+     204.259,
+     49.072
+    ]
+   },
+   "100 kyr": {
+    "Merak": [
+     169.888,
+     57.289
+    ],
+    "Phecda": [
+     183.788,
+     53.898
+    ],
+    "Megrez": [
+     189.546,
+     57.121
+    ],
+    "Alioth": [
+     199.306,
+     55.582
+    ],
+    "Mizar": [
+     206.754,
+     54.048
+    ],
+    "Dubhe": [
+     158.152,
+     60.536
+    ],
+    "Alkaid": [
+     201.552,
+     48.758
+    ]
+   }
+  }
+ },
+ "5_sun_orbit": {
+  "pass": true,
+  "azimuthal_period_myr": 221.6,
+  "mean_azimuthal_period_myr_3gyr": 226.6,
+  "vertical_amplitude_pc": 113.2,
+  "vertical_period_myr": 88.0,
+  "R_min_kpc": 8.022,
+  "R_max_kpc": 9.162,
+  "criterion": "one revolution in 220.0\u2013240.0 Myr, crossing the plane (|z| > 20 pc both sides)"
+ },
+ "engineering": {
+  "force_table_accuracy": {
+   "n": 2000,
+   "median_rel_err": 1.0143643471215006e-05,
+   "p99_rel_err": 3.445764617419045e-05,
+   "max_rel_err": 5.4720143876140986e-05,
+   "worst_R_pc": 530.838211661479,
+   "worst_z_pc": 134.15278838543904,
+   "solar_annulus_max_rel_err": 1.538443959828121e-05,
+   "solar_annulus_n": 109,
+   "pass": true
+  },
+  "energy": {
+   "pass": true,
+   "max_rel_energy_error": {
+    "forward": 1.7577389737292883e-07,
+    "backward": 1.7683297796890243e-07
+   },
+   "criterion": "|\u0394E/E| < 1e-4 over \u00b1250 Myr"
+  },
+  "convergence": {
+   "pass": true,
+   "dt_vs_dt_over_2": {
+    "1.3 Myr": {
+     "median_star_pc": 0.0001395220962551153,
+     "p99_star_pc": 0.0007297412700637671,
+     "sun_pc": 0.00036216518760859734
+    },
+    "50 Myr": {
+     "median_star_pc": 0.0017686747870219043,
+     "p99_star_pc": 0.015003056637931902,
+     "sun_pc": 0.010402877606619898
+    },
+    "250 Myr": {
+     "median_star_pc": 0.020353217279152985,
+     "p99_star_pc": 0.08127836250836887,
+     "sun_pc": 0.041661791653093846
+    }
+   },
+   "criterion": "halving dt moves the Sun < 1 pc and the median star < 10 pc at 250 Myr"
+  },
+  "straight_line": {
+   "pass": true,
+   "by_time": {
+    "0.01 Myr": {
+     "median_dev_pc": 1.8272999979629284e-05,
+     "median_rel_to_motion": 4.056940143164944e-05,
+     "median_dev_over_tide_estimate": 0.5765159205789991
+    },
+    "0.1 Myr": {
+     "median_dev_pc": 0.0018258072396844243,
+     "median_rel_to_motion": 0.0004011844014360749,
+     "median_dev_over_tide_estimate": 0.5788821292618455
+    },
+    "1 Myr": {
+     "median_dev_pc": 0.18719140717400135,
+     "median_rel_to_motion": 0.004070363417738598,
+     "median_dev_over_tide_estimate": 0.5713461075706043
+    },
+    "5 Myr": {
+     "median_dev_pc": 4.838825843470833,
+     "median_rel_to_motion": 0.021077240676965023,
+     "median_dev_over_tide_estimate": 0.6012488462606537
+    }
+   },
+   "criterion": "at 0.1 Myr, integrated vs straight-line differ by < 0.1% of the distance moved"
+  },
+  "reversibility": {
+   "pass": true,
+   "max_roundtrip_error_pc": 1.5639723730259843e-10,
+   "criterion": "float64 out-and-back over 250 Myr returns within 1e-6 pc"
+  }
+ },
+ "runtime_s": 22.3
+}

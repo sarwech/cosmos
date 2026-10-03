@@ -38,6 +38,17 @@ music tracks are original and generated live with WebAudio — drop
 `cosmos-epic.mp3` / `cosmos-drift.mp3` / `cosmos-tesseract.mp3` beside the
 file to override them.
 
+## Cosmos · Time
+The **⏳ TIME** button opens [`time/`](time/): about a million real stars from
+**Gaia DR3** (plus Hipparcos for the brightest), their *measured* positions and
+velocities run forward and backward through a model of the Milky Way on the
+GPU, ±250 million years. Watch the Big Dipper fall apart, Barnard's Star creep
+to 3.77 ly, Gliese 710 pass through the Oort cloud, and the Sun ride once around
+the galaxy — every moment a shareable link. The page and its data pipeline are
+documented in [`time/README.md`](time/README.md) and
+[`pipeline/README.md`](pipeline/README.md); the physics checks are in
+[`pipeline/reports/validation.md`](pipeline/reports/validation.md).
+
 ## Controls
 Scroll / pinch / **↑ ↓** = zoom · Drag / **← →** = look ·
 Click a named star or nebula = fly to it ·
