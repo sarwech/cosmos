@@ -121,7 +121,7 @@ export class UI {
       d.className = 'stick' + (t === 0 ? ' zero' : '') + (minor ? ' minor' : '');
       d.textContent = label;
       d.style.left = ((tToS(t) + 1) / 2 * 100) + '%';
-      d.onclick = () => { this.stopPlay(); this.S.t = t; this.S.lastInput = performance.now(); };
+      d.onclick = () => { this.stopPlay(); this.setT(t); };
       wrap.appendChild(d);
       return { d, t };
     });
@@ -151,11 +151,24 @@ export class UI {
     $('playBtn').onclick = () => this.togglePlay(1);
     $('revBtn').onclick = () => this.togglePlay(-1);
     $('fwdBtn').onclick = () => this.setSpeed(this.S.speed + 1);
-    $('todayBtn').onclick = () => { this.stopPlay(); this.S.t = 0; this.S.lastInput = performance.now(); };
+    $('todayBtn').onclick = () => { this.stopPlay(); this.setT(0); };
     $('constBtn').onclick = () => this.toggleLines();
     $('palBtn').onclick = () => this.togglePal();
     $('cardX').onclick = () => this.select(-1);
     this.setSpeed(this.S.speed);
+  }
+  /* every jump of the time target goes through here, so it is always in range */
+  setT(t) {
+    const S = this.S;
+    S.t = Math.max(-S.tMax, Math.min(S.tMax, t));
+    S.lastInput = performance.now();
+  }
+  /* the play speed that covers |Δt| in roughly 6 seconds (speeds step by 10×) */
+  speedFor(dt) {
+    const want = Math.max(Math.abs(dt), 1e-6) / 6;
+    let best = 0;
+    SPEEDS.forEach((v, k) => { if (Math.abs(Math.log(v / want)) < Math.abs(Math.log(SPEEDS[best] / want))) best = k; });
+    return best;
   }
   setSpeed(i) {
     this.S.speed = Math.max(0, Math.min(SPEEDS.length - 1, i));
@@ -281,7 +294,7 @@ export class UI {
     $('cardFly').onclick = () => { this.views.follow = i; if (this.S.view === 'earth' && this.overlays.selScene) this.views.lookAt(this.overlays.selScene); };
     $('cardNear').onclick = () => {
       const ca = this.closestApproach(i);
-      if (ca) { this.playToTime(ca.t, Math.abs(ca.t) < 0.05 ? 1 : Math.abs(ca.t) < 0.5 ? 2 : Math.abs(ca.t) < 5 ? 3 : 4);
+      if (ca) { this.playToTime(ca.t, this.speedFor(ca.t - this.S.t));
         this.caption(`Closest approach: ${fmtDist(ca.d)}`, describe(ca.t).main.toUpperCase()); }
     };
     if (det) this._makeClones(i, det);
@@ -470,7 +483,7 @@ export class UI {
     moment('Ride with the Sun', '250 MILLION YEARS IN A CO-MOVING FRAME', () => this.moment('ride'));
     moment('Orion, a million years ago', 'NIGHT SKY · −1 MYR', () => this.moment('orion'));
     for (const v of VIEWS) P.push({ t: VIEW_LABEL[v].toLowerCase().replace(/^./, c => c.toUpperCase()), s: 'VIEW · ' + (VIEWS.indexOf(v) + 1), g: 'VIEWS', fn: () => this.setView(v) });
-    P.push({ t: '⌂ Today', s: 'BACK TO THE MEASURED SKY', g: 'ACTIONS', fn: () => { this.stopPlay(); S.t = 0; } });
+    P.push({ t: '⌂ Today', s: 'BACK TO THE MEASURED SKY', g: 'ACTIONS', fn: () => { this.stopPlay(); this.setT(0); } });
     P.push({ t: '✦ Constellation lines', s: 'TOGGLE (C)', g: 'ACTIONS', fn: () => this.toggleLines() });
     P.push({ t: '📷 Save a photo', s: 'PNG WITH CAPTION (S)', g: 'ACTIONS', fn: () => { this.wantShot = true; } });
     P.push({ t: '✨ Bloom', s: 'TOGGLE THE GLOW (B)', g: 'ACTIONS', fn: () => { S.bloom = !S.bloom; } });
@@ -549,13 +562,13 @@ export class UI {
       if (i < 0) return;
       const ca = this.closestApproach(i);
       S.t = 0; this.caption('Barnard’s Star', 'THE FASTEST-MOVING STAR IN OUR SKY, HEADING OUR WAY', 3600);
-      setTimeout(() => this.playToTime(ca ? ca.t : 0.0097, 0), 1800);
+      setTimeout(() => this.playToTime(ca ? ca.t : 0.0097, this.speedFor(ca ? ca.t : 0.0097)), 1800);
     } else if (k === 'gl710') {
       this.setView('earth'); const i = await star('gliese-710');
       if (i < 0) return;
       const ca = this.closestApproach(i);
       this.caption('Gliese 710', 'A DIM ORANGE DWARF, 62 LIGHT-YEARS AWAY · FOR NOW', 3600);
-      S.t = 0; setTimeout(() => this.playToTime(ca ? ca.t : 1.29, 3), 1800);
+      S.t = 0; setTimeout(() => this.playToTime(ca ? ca.t : 1.29, this.speedFor(ca ? ca.t : 1.29)), 1800);
     } else if (k === 'galyear') {
       this.setView('disk'); this.select(-1); S.t = 0;
       Object.assign(this.views.st.disk, { yaw: -Math.PI / 2, pitch: 1.2, dist: 38000 });
