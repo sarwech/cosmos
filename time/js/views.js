@@ -50,6 +50,8 @@ export class Views {
 
   /* point the Earth-view camera at a scene direction / follow a star */
   lookAt(dir) {
+    const l = dir.length();
+    if (!(l > 0) || !isFinite(l)) return;          // never let NaN into the camera
     const s = this.st.earth;
     s.yaw = Math.atan2(dir.x, dir.z);
     s.pitch = Math.asin(Math.max(-1, Math.min(1, dir.y / dir.length())));
@@ -94,7 +96,8 @@ export class Views {
         this.gcFrame.copy(this.frame).multiply(new THREE.Matrix4().makeTranslation(-sunPos[0], -sunPos[1], -sunPos[2]));
       }
       // orbit target: a followed star, else the Galactic Centre (disk) / the Sun (ride)
-      if (this.follow >= 0 && this.followPos) this.target.lerp(this.followPos, Math.min(1, dt * 5));
+      if (this.follow >= 0 && this.followPos && this.snapTarget) { this.target.copy(this.followPos); this.snapTarget = false; }
+      else if (this.follow >= 0 && this.followPos) this.target.lerp(this.followPos, Math.min(1, dt * 5));
       else this.target.lerp(new THREE.Vector3(0, 0, 0), Math.min(1, dt * 3));
       cam.position.copy(this.target).addScaledVector(dir, c.dist);
       cam.up.set(0, 1, 0);
@@ -115,7 +118,7 @@ export class Views {
   /* ---------------------------------------------------------------- input */
   _input() {
     const cv = this.canvas, ptrs = new Map();
-    let downX = 0, downY = 0, moved = 0, pinch0 = 0;
+    let downX = 0, downY = 0, moved = 99, pinch0 = 0;
     const touch = () => { this.follow = this.view === 'earth' ? -1 : this.follow; this.onInput && this.onInput(); };
     cv.addEventListener('pointerdown', e => {
       cv.setPointerCapture(e.pointerId);
@@ -145,6 +148,7 @@ export class Views {
       s.pitch = Math.max(-1.5, Math.min(1.5, s.pitch + (this.view === 'earth' ? dy : dy) * sens));
     });
     const up = e => {
+      if (!ptrs.has(e.pointerId)) return;            // the press began elsewhere (e.g. the ⌘K list)
       ptrs.delete(e.pointerId);
       cv.classList.remove('dragging');
       if (moved < 5 && e.type === 'pointerup' && this.onPick) this.onPick(e.clientX, e.clientY);

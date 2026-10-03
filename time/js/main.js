@@ -73,40 +73,6 @@ async function boot() {
   const overlays = new Overlays(scene, camera, manifest, sun, cat, figures, names, palette);
   const ui = new UI({ S, manifest, cat, names, views, overlays, sun, table, renderer, canvas });
 
-  /* stream the tiers; the first one renders at once */
-  let first = true;
-  const t0 = performance.now();
-  await cat.load((loaded, name) => {
-    setLoad(0.1 + 0.9 * loaded / cat.N, `LOADING ${loaded.toLocaleString()} STARS`);
-    if (first) {
-      first = false;
-      if (S.fallback) {
-        const src = { P0: new THREE.InstancedBufferAttribute(cat.pos, 4), V0: new THREE.InstancedBufferAttribute(cat.vel, 4) };
-        stars = makeStars(starMaterial(src, cat.phot, palette, u), loaded);
-        stars.userData.attrs = [src.P0, src.V0];
-      } else {
-        integ = new GPUIntegrator(renderer, manifest, table.data, sun, { pos: cat.pos, vel: cat.vel });
-        stars = makeStars(starMaterial(integ, cat.phot, palette, u), loaded);
-      }
-      starsFrame.add(stars);
-      ui.ready({ integ });
-    } else {
-      stars.count = loaded;
-      if (integ) integ.reupload();
-      else for (const a of stars.userData.attrs) a.needsUpdate = true;
-      stars.material.userData.photAttr.needsUpdate = true;
-    }
-    overlays.setLoaded(loaded);
-  });
-  document.getElementById('loader').style.opacity = 0;
-  if (!location.hash) ui.caption('A million real stars, as Gaia measured them',
-    'DRAG THE TIME SLIDER · SPACE TO PLAY · ⌘K FOR A GUIDED MOMENT', 6000);
-  console.info(`[time] ${cat.loaded.toLocaleString()} stars in ${((performance.now() - t0) / 1000).toFixed(1)} s`,
-    S.fallback ? '(WebGL2 fallback)' : '(WebGPU)');
-  if (S.fallback) ui.notice('WebGPU is not available in this browser, so this is the WebGL2 fallback: the ' +
-    `${cat.loaded.toLocaleString()} brightest stars, moving in straight lines, limited to ±1 million years ` +
-    '(beyond that straight lines would be wrong). Open in a WebGPU browser for the full million stars and ±250 million years.');
-
   /* -------------------------------------------------------- frame loop --- */
   let budget = qs.has('budget') ? +qs.get('budget') : 32;        // leapfrog steps per frame
   let last = performance.now(), slow = 0;
@@ -115,19 +81,25 @@ async function boot() {
   function frame(now) {
     const dt = Math.min((now - last) / 1000, 0.1); last = now;
     window.__loops = (window.__loops || 0) + 1;
+    if (!stars) return;                                   // first tier still decoding
     ui.tick(dt);                                          // play, scrub easing → S.t
     const t = Math.max(-S.tMax, Math.min(S.tMax, S.t));
     const sg = t >= 0 ? 1 : -1, q = Math.abs(t) / sun.dt;
     const nT = Math.min(Math.floor(q), nMax - 2), f = q - nT;
 
     if (integ) {
-      const idle = !S.playing && now - S.lastInput > 1500;
-      const canonical = idle && !integ.canonical;
-      const left = integ.march(sg, nT, budget, canonical);
+      // Reverse steps are exact up to float32 round-off (≤ 0.1 pc after a
+      // 240 → 100 Myr scrub), invisible at any scale shown, and a fresh load
+      // of a link always integrates canonically from t = 0. Only "today" is
+      // forced back to the bit-exact measured state, which costs one step.
+      const left = integ.march(sg, nT, budget, nT === 0 && integ.dirty);
       S.busy = left > 0;
-      // adapt the per-frame step budget to keep the frame near 60 fps
-      if (dt > 0.03) { slow++; if (slow > 3) { budget = Math.max(2, budget >> 1); slow = 0; } }
-      else if (S.busy && dt < 0.02) budget = Math.min(512, budget + 4);
+      // adapt the per-frame step budget while integrating, against the
+      // frame rate this display actually runs at
+      if (S.busy) {
+        if (dt > 0.034) { if (++slow >= 3) { budget = Math.max(16, (budget * 0.7) | 0); slow = 0; } }
+        else { slow = 0; if (dt < 0.02) budget = Math.min(1024, budget + 8); }
+      }
       u.h.value = integ.sg * sun.dt;
       u.f.value = S.busy ? 0 : f;
       S.tShown = S.busy ? integ.sg * integ.n * sun.dt : t;
@@ -173,6 +145,43 @@ async function boot() {
     renderer.setSize(innerWidth, innerHeight);
     sizeBloom();
   });
+
+  /* stream the tiers; the sky appears with the first one and fills in */
+  let first = true;
+  const t0 = performance.now();
+  await cat.load((loaded, name) => {
+    setLoad(0.1 + 0.9 * loaded / cat.N, `LOADING ${loaded.toLocaleString()} STARS`);
+    S.loading = loaded < cat.N ? `LOADING STARS · ${loaded.toLocaleString()} OF ${cat.N.toLocaleString()}` : '';
+    if (first) {
+      first = false;
+      if (S.fallback) {
+        const src = { P0: new THREE.InstancedBufferAttribute(cat.pos, 4), V0: new THREE.InstancedBufferAttribute(cat.vel, 4) };
+        stars = makeStars(starMaterial(src, cat.phot, palette, u), loaded);
+        stars.userData.attrs = [src.P0, src.V0];
+      } else {
+        integ = new GPUIntegrator(renderer, manifest, table.data, sun, { pos: cat.pos, vel: cat.vel });
+        stars = makeStars(starMaterial(integ, cat.phot, palette, u), loaded);
+      }
+      starsFrame.add(stars);
+      overlays.setLoaded(loaded);
+      document.getElementById('loader').style.opacity = 0;
+      ui.ready({ integ });
+    } else {
+      stars.count = loaded;
+      if (integ) integ.reupload();
+      else for (const a of stars.userData.attrs) a.needsUpdate = true;
+      stars.material.userData.photAttr.needsUpdate = true;
+      overlays.setLoaded(loaded);
+    }
+  });
+  S.loading = '';
+  if (!location.hash) ui.caption('A million real stars, as Gaia measured them',
+    'DRAG THE TIME SLIDER · SPACE TO PLAY · ⌘K FOR A GUIDED MOMENT', 6000);
+  console.info(`[time] ${cat.loaded.toLocaleString()} stars in ${((performance.now() - t0) / 1000).toFixed(1)} s`,
+    S.fallback ? '(WebGL2 fallback)' : '(WebGPU)');
+  if (S.fallback) ui.notice('WebGPU is not available in this browser, so this is the WebGL2 fallback: the ' +
+    `${cat.loaded.toLocaleString()} brightest stars, moving in straight lines, limited to ±1 million years ` +
+    '(beyond that straight lines would be wrong). Open in a WebGPU browser for the full million stars and ±250 million years.');
   window.__time = { S, cat, sun, table, integ: () => integ, renderer, manifest, views, overlays, THREE, scene, bloom };
 }
 

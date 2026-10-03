@@ -158,8 +158,8 @@ def write(cat, uncertainty=None):
     # names: every named star (+ aliases), and a HIP → index map
     names = []
     for i in np.flatnonzero((cat['name'] != '').to_numpy() | (cat['bayer'] != '').to_numpy()):
-        alias = [a for a in {cat['cosmos_name'].iloc[i], cat['bayer'].iloc[i]}
-                 if a and a != cat['name'].iloc[i]]
+        nm = (cat['name'].iloc[i] or cat['bayer'].iloc[i]).lower()
+        alias = [a for a in {cat['cosmos_name'].iloc[i], cat['bayer'].iloc[i]} if a and a.lower() != nm]
         names.append([int(i), cat['name'].iloc[i] or cat['bayer'].iloc[i], '|'.join(sorted(alias))])
     hip_pairs = np.array([(h, i) for i, h in enumerate(cat['hip'].to_numpy()) if h], dtype='<u4')
     hip_pairs = hip_pairs[np.argsort(hip_pairs[:, 0])]

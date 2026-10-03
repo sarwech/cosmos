@@ -1227,5 +1227,5 @@
    "criterion": "float64 out-and-back over 250 Myr returns within 1e-6 pc"
   }
  },
- "runtime_s": 22.3
+ "runtime_s": 21.5
 }

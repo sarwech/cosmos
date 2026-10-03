@@ -37,6 +37,15 @@ export class Catalogue {
     this.flags = new Uint16Array(this.N);
     this.hip = new Uint32Array(this.N);
     this.loaded = 0;                                    // stars [0, loaded) are decoded
+    this._waiting = [];
+  }
+
+  /* resolves true once star i is decoded, false if it is not in this view
+     (the WebGL2 fallback holds only the brightest ~108k) */
+  whenLoaded(i) {
+    if (!(i >= 0) || i >= this.N) return Promise.resolve(false);
+    if (i < this.loaded) return Promise.resolve(true);
+    return new Promise(res => this._waiting.push([i, res]));
   }
 
   /* Stream tiers in order; onTier(loadedCount) after each. */
@@ -75,6 +84,7 @@ export class Catalogue {
       }
       this.loaded = info.first + n;
       onTier && onTier(this.loaded, name);
+      this._waiting = this._waiting.filter(([i, res]) => (i < this.loaded ? (res(true), false) : true));
     }
   }
 

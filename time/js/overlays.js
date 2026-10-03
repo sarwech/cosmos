@@ -113,7 +113,7 @@ export class Overlays {
     this._v = new THREE.Vector3(); this._f = new THREE.Vector3();
   }
 
-  setLoaded(n) { this.loaded = n; }
+  setLoaded(n) { this.loaded = n; this._sel = null; }
 
   /* ask the GPU for the tracked stars' bracketing states (small async readback) */
   requestTracked(integ) {
@@ -137,12 +137,12 @@ export class Overlays {
     }
     const tr = this.tr;
     if (!tr) return false;
-    const live = tr.sg === integ.sg && tr.n === integ.n;
-    const f = live ? u.f.value : 0, h = u.h.value, x = [0, 0, 0];
-    for (let i = 0; i < T; i++) {
-      if (live) { hermite(tr.pa, tr.va, i * 4, tr.pb, tr.vb, i * 4, h, f, x, null); out.set(x, i * 3); }
-      else for (let c = 0; c < 3; c++) out[i * 3 + c] = tr.pa[i * 4 + c];
-    }
+    // The readback can trail the GPU by a step or two; interpolate within the
+    // bracket we have (clamped to its ends) instead of snapping back to A.
+    const h = tr.sg * this.sun.dt, x = [0, 0, 0];
+    const f = tr.sg === Math.sign(S.tShown || tr.sg)
+      ? Math.min(1, Math.max(0, Math.abs(S.tShown) / this.sun.dt - tr.n)) : 0;
+    for (let i = 0; i < T; i++) { hermite(tr.pa, tr.va, i * 4, tr.pb, tr.vb, i * 4, h, f, x, null); out.set(x, i * 3); }
     return true;
   }
 

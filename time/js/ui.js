@@ -78,7 +78,8 @@ export class UI {
     b.textContent = measured ? 'MEASURED · GAIA DR3 & HIPPARCOS' : (S.fallback ? 'SIMULATED · STRAIGHT-LINE MOTION' : 'SIMULATED · McMILLAN17 POTENTIAL');
     $('honest').innerHTML = this._honest(t);
     const busy = $('busy');
-    if (S.busy && this.integ) {
+    if (S.loading) { busy.textContent = S.loading; busy.style.opacity = 1; }
+    else if (S.busy && this.integ) {
       const tot = Math.max(1, Math.floor(Math.abs(S.t) / this.sun.dt));
       busy.textContent = `INTEGRATING ${this.cat.loaded.toLocaleString()} ORBITS → ${shortTime(S.t)}`;
       busy.style.opacity = 1;
@@ -130,8 +131,7 @@ export class UI {
       let s = Math.max(-1, Math.min(1, ((x - r.left) / r.width) * 2 - 1));
       let t = sToT(s);
       if (Math.abs(s) < 0.004) t = 0;                             // a detent at today
-      this.S.t = Math.max(-this.S.tMax, Math.min(this.S.tMax, t));
-      this.S.lastInput = performance.now();
+      this.setT(t);
     };
     track.addEventListener('pointerdown', e => {
       track.setPointerCapture(e.pointerId); this.dragging = true; this.stopPlay(); setFromX(e.clientX);
@@ -159,6 +159,7 @@ export class UI {
   }
   /* every jump of the time target goes through here, so it is always in range */
   setT(t) {
+    clearTimeout(this._momentT);
     const S = this.S;
     S.t = Math.max(-S.tMax, Math.min(S.tMax, t));
     S.lastInput = performance.now();
@@ -175,6 +176,7 @@ export class UI {
     $('speed').textContent = SPEED_LABEL[this.S.speed];
   }
   togglePlay(dir) {
+    clearTimeout(this._momentT);
     const S = this.S;
     if (S.playing && S.dir === dir) { this.stopPlay(); return; }
     S.playing = true; S.dir = dir; this.playTo = null;
@@ -219,8 +221,8 @@ export class UI {
       const step = e.shiftKey ? 0.05 : 0.005;
       switch (e.code) {
         case 'Space': e.preventDefault(); this.togglePlay(S.playing ? S.dir : 1); break;
-        case 'ArrowRight': this.stopPlay(); S.t = Math.min(S.tMax, sToT(tToS(S.t) + step)); S.lastInput = performance.now(); break;
-        case 'ArrowLeft': this.stopPlay(); S.t = Math.max(-S.tMax, sToT(tToS(S.t) - step)); S.lastInput = performance.now(); break;
+        case 'ArrowRight': this.stopPlay(); this.setT(sToT(tToS(S.t) + step)); break;
+        case 'ArrowLeft': this.stopPlay(); this.setT(sToT(tToS(S.t) - step)); break;
         case 'BracketRight': this.setSpeed(S.speed + 1); break;
         case 'BracketLeft': this.setSpeed(S.speed - 1); break;
         case 'Digit1': this.setView('earth'); break;
@@ -233,7 +235,7 @@ export class UI {
         case 'KeyS': this.wantShot = true; break;
         case 'Equal': case 'NumpadAdd': this.views.depth = Math.min(14, this.views.depth + 1); this.caption('Fainter stars', `LIMITING MAGNITUDE ${this.views.depth.toFixed(1)}`); break;
         case 'Minus': case 'NumpadSubtract': this.views.depth = Math.max(2, this.views.depth - 1); this.caption('Brighter stars only', `LIMITING MAGNITUDE ${this.views.depth.toFixed(1)}`); break;
-        case 'Digit0': case 'Home': this.stopPlay(); S.t = 0; break;
+        case 'Digit0': case 'Home': this.stopPlay(); this.setT(0); break;
         case 'Escape': if (S.selected >= 0) this.select(-1); break;
         default: return;
       }
@@ -251,10 +253,13 @@ export class UI {
   /* --------------------------------------------------------- selection -- */
   select(i, fly) {
     const S = this.S;
+    if (i >= this.cat.loaded) i = -1;               // never touch a star whose tier isn't decoded
     S.selected = i;
     this.clones = null; this.overlays.cloud = null; this.closest = null;
-    if (i < 0) { $('card').classList.remove('show'); this.views.follow = -1; this.overlays.selLabel = ''; return; }
-    if (fly) this.views.follow = i;
+    this.overlays.selLabel = ''; this.selIds = null;
+    if (i < 0) { $('card').classList.remove('show'); this.views.follow = -1; return; }
+    if (fly || this.views.follow >= 0) this.views.follow = i;
+    if (fly && this.S.view !== 'earth') this.views.snapTarget = true;
     this._card(i);
   }
 
@@ -268,6 +273,7 @@ export class UI {
     const det = await c.details(i).catch(() => null);
     if (S.selected !== i) return;
     const id = det && det.sourceId ? `GAIA DR3 ${det.sourceId}` : det && det.hip ? `HIP ${det.hip}` : 'STAR #' + i;
+    this.selIds = det ? { sourceId: det.sourceId, hip: det.hip } : null;
     this.overlays.selLabel = name || id;
     $('cardName').textContent = (name || id).toUpperCase();
     const teff = Math.round(Math.pow(10, this.manifest.quant.logteff_min + c.phot[i * 2 + 1] / 255 *
@@ -529,7 +535,11 @@ export class UI {
     pal.addEventListener('pointerdown', e => { if (e.target === pal) this.closePal(); });
   }
 
-  goStar(i) {
+  async goStar(i) {
+    if (!(await this.cat.whenLoaded(i))) {
+      this.caption('Not in this view', this.S.fallback ? 'THE WebGL2 FALLBACK HOLDS ONLY THE BRIGHTEST STARS' : 'STAR NOT FOUND');
+      return;
+    }
     this.select(i, true);
     if (this.S.view === 'earth') {
       const x = this.overlays.starPos(i, this.S, this.integ);
@@ -548,43 +558,52 @@ export class UI {
   }
 
   /* the guided moments — times come from the same integrator, not from text */
+  _later(fn, ms) { clearTimeout(this._momentT); this._momentT = setTimeout(fn, ms); }
   async moment(k) {
     const S = this.S;
+    clearTimeout(this._momentT);
     this.stopPlay();
-    const star = async name => { const i = await this.findSlug(name); if (i >= 0) this.select(i, true); return i; };
+    const star = async name => {
+      const i = await this.findSlug(name);
+      if (i >= 0 && await this.cat.whenLoaded(i)) { this.select(i, true); return i; }
+      return -1;
+    };
     if (k === 'dipper') {
       this.setView('earth'); this.select(-1); S.t = 0; S.lines = true; $('constBtn').classList.add('on');
       Object.assign(this.views.st.earth, { yaw: -Math.PI / 2 + 0.05, pitch: 0.95, fov: 58 });
       this.caption('The Big Dipper', 'FIVE OF ITS STARS TRAVEL TOGETHER · DUBHE AND ALKAID DO NOT', 4200);
-      setTimeout(() => this.playToTime(0.1, 2), 1500);
+      this._later(() => this.playToTime(0.1, 2), 1500);
     } else if (k === 'barnard') {
       this.setView('earth'); const i = await star('barnards-star');
       if (i < 0) return;
       const ca = this.closestApproach(i);
       S.t = 0; this.caption('Barnard’s Star', 'THE FASTEST-MOVING STAR IN OUR SKY, HEADING OUR WAY', 3600);
-      setTimeout(() => this.playToTime(ca ? ca.t : 0.0097, this.speedFor(ca ? ca.t : 0.0097)), 1800);
+      this._later(() => this.playToTime(ca ? ca.t : 0.0097, this.speedFor(ca ? ca.t : 0.0097)), 1800);
     } else if (k === 'gl710') {
       this.setView('earth'); const i = await star('gliese-710');
       if (i < 0) return;
       const ca = this.closestApproach(i);
       this.caption('Gliese 710', 'A DIM ORANGE DWARF, 62 LIGHT-YEARS AWAY · FOR NOW', 3600);
-      S.t = 0; setTimeout(() => this.playToTime(ca ? ca.t : 1.29, this.speedFor(ca ? ca.t : 1.29)), 1800);
+      S.t = 0; this._later(() => this.playToTime(ca ? ca.t : 1.29, this.speedFor(ca ? ca.t : 1.29)), 1800);
     } else if (k === 'galyear') {
       this.setView('disk'); this.select(-1); S.t = 0;
       Object.assign(this.views.st.disk, { yaw: -Math.PI / 2, pitch: 1.2, dist: 38000 });
       this.caption('One galactic year', 'THE SUN AND A MILLION NEIGHBOURS, ONCE AROUND THE CENTRE', 4200);
-      setTimeout(() => this.playToTime(Math.min(S.tMax, 222), 5), 1500);
+      this._later(() => this.playToTime(Math.min(S.tMax, 222), 5), 1500);
     } else if (k === 'ride') {
       this.setView('ride'); this.select(-1); S.t = 0;
       this.caption('Riding with the Sun', 'THE NEIGHBOURHOOD SHEARS APART AS THE GALAXY TURNS', 4200);
-      setTimeout(() => this.playToTime(S.tMax, 5), 1500);
+      this._later(() => this.playToTime(S.tMax, 5), 1500);
     } else if (k === 'orion') {
       this.setView('earth'); this.select(-1); S.lines = true; $('constBtn').classList.add('on');
       Object.assign(this.views.st.earth, { yaw: Math.atan2(0.08, 0.99) + Math.PI, pitch: 0.0, fov: 64 });
       const betel = await this.findSlug('betelgeuse');
-      if (betel >= 0) { const x = this.overlays.starPos(betel, S, this.integ); if (x) this.views.lookAt(new THREE.Vector3(...x).applyMatrix4(this.views.frame)); }
+      if (betel >= 0 && await this.cat.whenLoaded(betel)) {      // aim at where Orion is at t = 0
+        const c = this.cat.pos;
+        this.views.lookAt(new THREE.Vector3(c[betel * 4], c[betel * 4 + 1], c[betel * 4 + 2]).applyMatrix4(this.views.E));
+      }
       S.t = 0; this.caption('Orion', 'ITS STARS ARE HUNDREDS OF LIGHT-YEARS APART, SO IT HOLDS ITS SHAPE', 4200);
-      setTimeout(() => this.playToTime(-1, 4), 1500);
+      this._later(() => this.playToTime(-1, 4), 1500);
     }
   }
 
@@ -593,12 +612,19 @@ export class UI {
     const p = new URLSearchParams(String(hash || '').replace(/^#/, ''));
     if (!p.toString()) return;
     const S = this.S;
+    clearTimeout(this._momentT);
     if (p.has('view')) this.setView(p.get('view'));
     if (p.has('cam')) this.views.setCam(p.get('cam'), first);
     if (p.has('t')) { const t = parseTime(p.get('t')); if (t !== null) { this.stopPlay(); S.t = Math.max(-S.tMax, Math.min(S.tMax, t)); } }
     if (p.has('target')) {
       const i = await this.findSlug(p.get('target'));
-      if (i >= 0) { this.select(i, !p.has('cam')); if (!p.has('cam')) this.goStar(i); }
+      if (i >= 0 && await this.cat.whenLoaded(i)) {
+        const earth = this.S.view === 'earth';
+        // in the Earth view a camera in the link wins; above the disk the
+        // camera orbits the target, which is what the link was looking at
+        this.select(i, !earth || !p.has('cam'));
+        if (earth && !p.has('cam')) this.goStar(i);
+      } else if (i >= this.cat.N) this.caption('Not in this view', 'THE WebGL2 FALLBACK HOLDS ONLY THE BRIGHTEST STARS');
     }
     if (p.has('moment')) this.moment(p.get('moment'));
     this.lastHash = location.hash;
@@ -611,8 +637,10 @@ export class UI {
     const S = this.S;
     let h = '#t=' + linkTime(S.t) + '&view=' + S.view;
     if (S.selected >= 0) {
-      const n = this.overlays.nameOf.get(S.selected);
-      h += '&target=' + (n ? slug(n) : (this.overlays.selLabel || '').toLowerCase().replace(/\s+/g, '-'));
+      const n = this.overlays.nameOf.get(S.selected), ids = this.selIds;
+      if (n && this.slugIdx.get(loose(n)) === S.selected) h += '&target=' + slug(n);
+      else if (ids && ids.sourceId) h += '&target=gaia-dr3-' + ids.sourceId;
+      else if (ids && ids.hip) h += '&target=hip-' + ids.hip;
     }
     h += '&cam=' + this.views.camString();
     if (h !== this.lastHash) { this.lastHash = h; try { history.replaceState(null, '', h); } catch (e) {} }

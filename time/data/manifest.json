@@ -1532,7 +1532,7 @@
   "info-28.bin": 1048576,
   "info-29.bin": 1048576,
   "info-30.bin": 770688,
-  "names.json": 296911,
+  "names.json": 224102,
   "stars-0.bin": 1600000,
   "stars-1.bin": 4000000,
   "stars-2.bin": 4000000,
@@ -1549,5 +1549,5 @@
   "stars-4.bin": "1e5421b4e1f432c8",
   "force-mcmillan17.bin": "62a8ff61824276b8"
  },
- "total_bytes": 59284153
+ "total_bytes": 59211344
 }

@@ -25,6 +25,8 @@ from . import colour
 from . import config as C
 from . import fetch_gaia, fetch_hip, fetch_meta
 
+GREEK = re.compile(r'^(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|omicron|pi|rho|'
+                   r'sigma|tau|upsilon|phi|chi|psi|omega)(-\d)?\s', re.I)
 SRC_GAIA, SRC_HIP = 0, 1
 RV_GAIA, RV_XHIP, RV_SIMBAD, RV_NONE = 0, 1, 2, 3
 SAMPLE_LOCAL, SAMPLE_DISK, SAMPLE_BRIGHT = 0, 1, 2
@@ -246,7 +248,9 @@ def build():
     for hip, i in hip_index.items():
         s = xn.get(hip, '')
         s = re.sub(r'\(.*?\)', '', str(s)).strip()
-        s = re.sub(r'^\d+\s+', '', s)                       # drop the Flamsteed number
+        bare = re.sub(r'^\d+\s+', '', s)                    # drop the Flamsteed number …
+        if GREEK.match(bare):                               # … only if a Bayer (Greek) letter remains
+            s = bare
         if s and s != 'nan':
             cat.loc[i, 'bayer'] = s
     cat.to_parquet(path)

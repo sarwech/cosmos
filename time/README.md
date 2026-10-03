@@ -107,10 +107,13 @@ test/          parity and determinism tests
   the Sun (pc, pc/Myr). Each dispatch runs K kick-drift-kick steps per star
   in registers.
   * Scrubbing outward continues from the current state.
-  * Scrubbing back uses the time-reversed step.
-  * When the page goes idle it re-runs from t = 0, so the settled state is
-    canonical.
-  * The step budget per frame adapts to keep the frame rate up.
+  * Scrubbing back uses the time-reversed step. It is exact up to float32
+    round-off: at most 0.08 pc after scrubbing from +240 back to +100 Myr.
+  * Opening a link always integrates fresh from t = 0, so a shared moment is
+    bit-identical for everyone.
+  * Returning to "today" restores the exact measured state.
+  * The step budget per frame adapts to the display's frame rate while
+    integrating.
 * **Rendering.** The vertex shader Hermite-interpolates between the two
   bracketing steps, so slow play needs no integration at all.
 * **Brightness.** Stars are drawn from absolute G magnitude and distance to
@@ -135,7 +138,8 @@ Measured in headless Chromium with SwiftShader WebGPU, CPU-emulated:
 | −250 Myr | 0.17 pc |
 
 Scrubbing back from +240 to +100 Myr drifts at most 0.08 pc from the canonical
-state; the settled state is bit-identical to a fresh run.
+state, and the canonical recompute (what loading a link does) is bit-identical
+to a fresh run.
 
 **Test hooks:**
 * `?n=<N>` loads only the first N stars.
