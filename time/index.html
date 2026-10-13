@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COSMOS · TIME — the Milky Way across 500 million years</title>
+<meta name="description" content="Scrub through time and watch a million real Gaia DR3 stars move. The Big Dipper falls apart, Gliese 710 passes through the Oort cloud, and the Sun rides once around the galaxy.">
+<meta property="og:title" content="COSMOS · TIME — the Milky Way across 500 million years">
+<meta property="og:description" content="A million real stars from Gaia DR3, their measured motions run forward and backward through a model of the Galaxy. Every view and every moment is a shareable link.">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="../preview.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23060b14'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%237fb4ff'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%233e568a' stroke-width='2' stroke-dasharray='6 5'/%3E%3C/svg%3E">
+<style>
+  /* palette, type and components copied from ../index.html so the two pages read as one product */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#000; }
+  body { font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#cfd8e3; user-select:none; -webkit-user-select:none; }
+  #c { position:fixed; inset:0; display:block; width:100%; height:100%; cursor:grab; touch-action:none; }
+  #c.dragging { cursor:grabbing; }
+  #vignette { position:fixed; inset:0; pointer-events:none; z-index:3;
+    background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%); }
+
+  #title { position:fixed; top:22px; left:26px; z-index:10; }
+  #title h1 { font-size:13px; letter-spacing:0.42em; font-weight:600; color:#e8eef7; }
+  #title p { font-size:10.5px; letter-spacing:0.14em; color:#5d6b7e; margin-top:5px; }
+  #title a { color:#5d6b7e; text-decoration:none; transition:color .25s; }
+  #title a:hover { color:#cfe2ff; }
+
+  #timeHud { position:fixed; top:22px; left:50%; transform:translateX(-50%); z-index:10;
+    text-align:center; pointer-events:none; min-width:340px; }
+  #timeHud .lbl { font-size:9px; letter-spacing:0.3em; color:#5d6b7e; margin-bottom:4px; }
+  #timeHud .val { font-size:21px; font-weight:300; letter-spacing:0.06em; color:#f2f6fb;
+    font-variant-numeric:tabular-nums; text-shadow:0 0 18px rgba(120,170,255,.35); }
+  #timeHud .yr { font-size:10px; letter-spacing:0.22em; color:#8fa3bd; margin-top:5px; min-height:12px; text-shadow:0 0 8px #000; }
+  #timeHud .val, #timeHud .lbl { text-shadow:0 0 10px #000, 0 0 18px rgba(120,170,255,.35); }
+  #badge { display:inline-block; margin-top:8px; font-size:9px; letter-spacing:0.24em; padding:5px 11px;
+    border-radius:12px; border:1px solid #2a3a52; background:rgba(16,24,36,.55); color:#9fb6d4;
+    backdrop-filter:blur(6px); transition:all .4s; }
+  #badge.measured { color:#bfe6d6; border-color:#2f6a5a; box-shadow:0 0 14px rgba(80,200,160,.18); }
+  #badge.simulated { color:#e8d2a8; border-color:#6a5a3a; box-shadow:0 0 14px rgba(230,180,90,.14); }
+  #honest { font-size:9.5px; letter-spacing:0.12em; color:#6a7a8f; margin-top:7px; line-height:1.7; max-width:440px; margin-left:auto; margin-right:auto;
+    text-shadow:0 0 8px #000, 0 0 3px #000, 0 0 14px #000; }
+  #honest b { color:#8fa3bd; font-weight:500; }
+
+  /* right ladder: the three views (same component as Cosmos's scale ladder) */
+  #ladder { position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:10; }
+  #ladder .track { position:relative; width:2px; height:min(34vh,260px); margin:0 auto;
+    background:linear-gradient(#1c2736, #2a3a52, #1c2736); border-radius:2px; }
+  #ladder .dot { position:absolute; left:50%; width:9px; height:9px; border-radius:50%;
+    background:#7fb4ff; transform:translate(-50%,-50%); box-shadow:0 0 12px #7fb4ff, 0 0 4px #fff;
+    transition:top .35s ease; }
+  .tick { position:absolute; right:14px; transform:translateY(-50%); white-space:nowrap;
+    font-size:9.5px; letter-spacing:0.16em; color:#56657a; cursor:pointer; padding:3px 6px;
+    transition:color .25s; text-align:right; }
+  .tick:hover { color:#cfe2ff; }
+  .tick.on { color:#aecdfb; }
+  .tick::after { content:''; position:absolute; right:-12px; top:50%; width:7px; height:1px; background:#3a4a62; }
+  .tick small { display:block; font-size:8px; letter-spacing:0.12em; color:#3f4e63; margin-top:2px; }
+
+  #hint { position:fixed; bottom:96px; left:26px; z-index:10; font-size:10.5px;
+    letter-spacing:0.12em; color:#54657c; line-height:1.9; transition:opacity 1.2s; pointer-events:none; }
+  #hint b { color:#92a8c5; font-weight:600; }
+
+  #caption { position:fixed; bottom:18vh; left:50%; transform:translateX(-50%); z-index:11;
+    font-family:Georgia, 'Times New Roman', serif; font-style:italic; font-size:clamp(17px,2.3vw,26px);
+    color:#eef3fa; text-align:center; opacity:0; transition:opacity 1.1s ease; pointer-events:none;
+    text-shadow:0 1px 24px rgba(0,0,0,.85); letter-spacing:0.03em; max-width:80vw; }
+  #caption small { display:block; font-size:0.55em; color:#8ea4c2; margin-top:7px; font-style:normal;
+    font-family:'Helvetica Neue',sans-serif; letter-spacing:0.22em; }
+
+  /* scrubber */
+  #scrub { position:fixed; left:26px; right:26px; bottom:52px; z-index:12; height:34px; }
+  #scrubTrack { position:absolute; left:0; right:0; top:15px; height:2px; border-radius:2px;
+    background:linear-gradient(90deg, #1c2736, #2a3a52 25%, #3e568a 50%, #2a3a52 75%, #1c2736); cursor:pointer; }
+  #scrubTrack::before { content:''; position:absolute; left:-8px; right:-8px; top:-15px; bottom:-15px; }
+  #scrubFine { position:absolute; left:25%; right:25%; top:-3px; bottom:-3px; border-left:1px solid #2a3a52;
+    border-right:1px solid #2a3a52; pointer-events:none; }
+  #scrubDot { position:absolute; top:50%; width:13px; height:13px; border-radius:50%; background:#7fb4ff;
+    transform:translate(-50%,-50%); box-shadow:0 0 12px #7fb4ff, 0 0 4px #fff; cursor:grab; }
+  .stick { position:absolute; top:22px; transform:translateX(-50%); font-size:8.5px; letter-spacing:0.12em;
+    color:#4a5a72; white-space:nowrap; cursor:pointer; padding:2px 4px; }
+  .stick:hover { color:#cfe2ff; }
+  .stick.zero { color:#7f93ad; }
+  .stick::before { content:''; position:absolute; left:50%; top:-9px; width:1px; height:5px; background:#2f3f57; }
+
+  #btns { position:fixed; bottom:12px; right:26px; z-index:12; display:flex; gap:10px; }
+  #play { position:fixed; bottom:12px; left:26px; z-index:12; display:flex; gap:8px; align-items:center; }
+  .btn { font-size:10px; letter-spacing:0.22em; color:#9fb6d4; background:rgba(16,24,36,.55);
+    border:1px solid #2a3a52; border-radius:20px; padding:9px 18px; cursor:pointer;
+    backdrop-filter:blur(6px); transition:all .25s; white-space:nowrap; }
+  .btn:hover { color:#fff; border-color:#5b7ca8; background:rgba(30,45,68,.7); }
+  .btn.primary { color:#dbe9ff; border-color:#3e568a; box-shadow:0 0 16px rgba(90,140,230,.25); }
+  .btn.on { color:#dbe9ff; border-color:#3e568a; }
+  .btn.round { padding:9px 13px; }
+  #speed { font-size:9.5px; letter-spacing:0.16em; color:#6c7f99; min-width:84px; text-align:center; }
+
+  .olabel { position:fixed; z-index:8; transform:translate(-50%,-130%); font-size:10px;
+    letter-spacing:0.18em; color:#b9cce6; cursor:pointer; padding:6px 9px; white-space:nowrap;
+    text-shadow:0 0 8px #000, 0 0 3px #000; transition:color .2s; }
+  .olabel:hover { color:#fff; }
+  .olabel.dim { color:#5d7088; }
+  .olabel.big { font-size:11.5px; color:#e4edf9; letter-spacing:0.24em; }
+  .olabel.const { color:#4f6582; font-size:9px; letter-spacing:0.32em; cursor:default; }
+  .olabel.sel { color:#ffe2a8; }
+
+  #card { position:fixed; top:84px; right:26px; z-index:13; width:286px; max-height:calc(100vh - 190px); overflow-y:auto;
+    background:rgba(10,16,26,.78); border:1px solid #263650; border-radius:12px;
+    padding:18px 20px; backdrop-filter:blur(10px); display:none; }
+  #card.show { display:block; animation:cardIn .45s ease; }
+  @keyframes cardIn { from { opacity:0; transform:translateY(-8px);} to { opacity:1; transform:none;} }
+  #card h2 { font-size:15px; font-weight:600; letter-spacing:0.08em; color:#f0f5fc; padding-right:16px; }
+  #card .sub { font-size:10px; letter-spacing:0.14em; color:#7e93af; margin:5px 0 12px; line-height:1.7; }
+  #card .row { display:flex; justify-content:space-between; gap:10px; font-size:10.5px; padding:5px 0;
+    border-top:1px solid rgba(255,255,255,.05); color:#a9bcd6; }
+  #card .row b { color:#e2ecf9; font-weight:500; font-variant-numeric:tabular-nums; text-align:right; }
+  #card .ph { font-size:9px; letter-spacing:0.26em; color:#5d6b7e; margin:12px 0 4px; }
+  #card .ph.m { color:#5f9c86; } #card .ph.s { color:#a8915f; }
+  #card .x { position:absolute; top:10px; right:14px; cursor:pointer; color:#5d6b7e; font-size:14px; }
+  #card .x:hover { color:#fff; }
+  #card .acts { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+  #card .acts .btn { padding:7px 12px; font-size:9px; letter-spacing:0.16em; }
+  #card .note { font-size:9.5px; color:#5d6b7e; line-height:1.6; margin-top:10px; letter-spacing:0.04em; }
+  #credit { position:fixed; bottom:2px; left:50%; transform:translateX(-50%); z-index:9;
+    font-size:8.5px; letter-spacing:0.14em; color:#3c4a5e; pointer-events:none; white-space:nowrap; }
+
+  #palette { position:fixed; inset:0; z-index:20; display:none;
+    background:rgba(2,5,10,.45); backdrop-filter:blur(3px); }
+  #palette.open { display:block; }
+  #palBox { position:absolute; left:50%; top:15%; transform:translateX(-50%);
+    width:min(480px, 92vw); background:rgba(12,18,30,.93); border:1px solid #2c3e5c;
+    border-radius:14px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.65); }
+  #palInput { width:100%; background:transparent; border:none; outline:none; color:#eef3fa;
+    font-size:15px; padding:16px 18px; letter-spacing:.04em;
+    border-bottom:1px solid #223149; font-family:'Helvetica Neue',Helvetica,sans-serif; }
+  #palInput::placeholder { color:#54657c; }
+  #palList { max-height:46vh; overflow-y:auto; padding:6px; }
+  .prow { display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding:9px 12px; border-radius:8px; cursor:pointer; }
+  .prow.sel, .prow:hover { background:rgba(60,90,140,.25); }
+  .prow .pt { font-size:12.5px; color:#dbe6f5; letter-spacing:.08em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .prow .ps { font-size:9.5px; color:#6c7f99; letter-spacing:.12em; white-space:nowrap; }
+  .pgroup { font-size:8.5px; letter-spacing:.3em; color:#4a5a72; padding:10px 12px 4px; }
+
+  #loader { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:15; text-align:center;
+    pointer-events:none; transition:opacity .8s; }
+  #loader .t { font-size:10px; letter-spacing:0.32em; color:#7e93af; }
+  #loader .bar { width:220px; height:2px; background:#1c2736; margin:12px auto 0; border-radius:2px; overflow:hidden; }
+  #loader .bar i { display:block; height:100%; width:0; background:#7fb4ff; box-shadow:0 0 8px #7fb4ff; transition:width .3s; }
+  #busy { position:fixed; top:146px; left:50%; transform:translateX(-50%); z-index:10; font-size:9px;
+    letter-spacing:0.28em; color:#7e93af; opacity:0; transition:opacity .3s; pointer-events:none; }
+  #notice { position:fixed; top:84px; left:26px; z-index:12; max-width:300px; font-size:10px; line-height:1.7;
+    letter-spacing:0.08em; color:#e8d2a8; background:rgba(26,20,10,.7); border:1px solid #6a5a3a;
+    border-radius:10px; padding:11px 14px; display:none; backdrop-filter:blur(6px); }
+
+  @media (max-width: 760px) {
+    #title h1 { font-size:11px; letter-spacing:0.3em; }
+    #title p { display:none; }
+    #timeHud { top:50px; min-width:0; width:92vw; }
+    #timeHud .val { font-size:16px; }
+    #honest { display:none; }
+    #hint, #credit { display:none; }
+    #ladder { right:8px; }
+    .tick { font-size:8.5px; }
+    .tick small { display:none; }
+    #scrub { left:14px; right:14px; bottom:60px; }
+    .stick.minor { display:none; }
+    #btns { right:12px; left:auto; bottom:12px; gap:6px; }
+    #play { left:12px; bottom:12px; gap:5px; }
+    .btn { padding:8px 11px; font-size:9px; letter-spacing:0.12em; }
+    #speed { display:none; }
+    #card { left:12px; right:12px; width:auto; top:150px; }
+    #palBox { top:7%; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.tsl.js"
+  },
+  "integrity": {
+    "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.webgpu.js": "sha384-4BcMoAQ5pbGKlA/ACC52ZLD19HUU8F/mGnEtg8LEb6G0S5xckMOrpPtPHQMzWi0D",
+    "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.core.js": "sha384-mdKeCwPEcbDvzaxwhm+MVuLoMou+E7jQqrs4tmu/n8HBYPGI1kZt0MkJxlMR4zFM",
+    "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.tsl.js": "sha384-i76xepHrmVxDoGJBGuT2FUEUGw0jdaDjus4NJ40g1FtIyusteqsUxnSz8avnH130"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vignette"></div>
+
+<div id="title">
+  <h1>C O S M O S &nbsp;·&nbsp; T I M E</h1>
+  <p><a href="../" title="Back to Cosmos">← COSMOS</a>&nbsp;&nbsp;·&nbsp;&nbsp;A MILLION REAL STARS, 250 MILLION YEARS EACH WAY</p>
+</div>
+
+<div id="timeHud">
+  <div class="lbl" id="viewLbl">THE NIGHT SKY FROM EARTH</div>
+  <div class="val" id="timeVal">Today</div>
+  <div class="yr" id="timeYr">GAIA EPOCH 2016.0</div>
+  <div id="badge" class="measured">MEASURED</div>
+  <div id="honest"></div>
+</div>
+<div id="busy">INTEGRATING ORBITS…</div>
+<div id="notice"></div>
+
+<div id="ladder"><div class="track" id="ladderTrack"><div class="dot" id="ladderDot"></div></div></div>
+
+<div id="hint">
+  <b>DRAG</b> &nbsp;look &nbsp;&nbsp; <b>SCROLL</b> &nbsp;zoom &nbsp;&nbsp; <b>CLICK A STAR</b> &nbsp;details<br>
+  <b>SPACE</b> &nbsp;play &nbsp;&nbsp; <b>← →</b> &nbsp;step &nbsp;&nbsp; <b>[ ]</b> &nbsp;speed &nbsp;&nbsp; <b>1 2 3</b> &nbsp;views<br>
+  <b>C</b> &nbsp;constellations &nbsp;&nbsp; <b>S</b> &nbsp;photo &nbsp;&nbsp; <b>B</b> &nbsp;bloom &nbsp;&nbsp; <b id="modkHint">⌘K</b> &nbsp;explore
+</div>
+
+<div id="caption"></div>
+
+<div id="scrub">
+  <div id="scrubTrack"><div id="scrubFine"></div><div id="scrubDot"></div></div>
+</div>
+
+<div id="play">
+  <div class="btn round" id="revBtn" title="Play backwards">◀◀</div>
+  <div class="btn round primary" id="playBtn" title="Play / pause (space)">▶</div>
+  <div class="btn round" id="fwdBtn" title="Faster">▶▶</div>
+  <div id="speed">10,000 YR / S</div>
+</div>
+
+<div id="btns">
+  <div class="btn" id="palBtn">⌘K EXPLORE</div>
+  <div class="btn" id="constBtn">✦ LINES</div>
+  <div class="btn" id="todayBtn">⌂ TODAY</div>
+</div>
+
+<div id="palette"><div id="palBox">
+  <input id="palInput" type="text" placeholder="Search stars, Gaia DR3 ids, HIP numbers, moments…" autocomplete="off" spellcheck="false">
+  <div id="palList"></div>
+</div></div>
+
+<div id="card">
+  <div class="x" id="cardX">✕</div>
+  <h2 id="cardName"></h2>
+  <div class="sub" id="cardSub"></div>
+  <div id="cardRows"></div>
+</div>
+
+<div id="loader"><div class="t" id="loaderT">LOADING GAIA DR3</div><div class="bar"><i id="loaderBar"></i></div></div>
+
+<div id="credit">ESA GAIA DR3 · HIPPARCOS-2 · XHIP · McMILLAN 2017 POTENTIAL · POSITIONS & VELOCITIES MEASURED, EVERYTHING ELSE SIMULATED</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

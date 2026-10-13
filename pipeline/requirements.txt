@@ -1,0 +1,13 @@
+astropy==8.0.1
+astropy-iers-data==0.2026.9.28.0.59.37
+astroquery==0.4.11
+galpy==1.12.0
+matplotlib==3.11.2
+numpy==2.4.6
+pandas==3.0.6
+pyarrow==25.0.1
+pyerfa==2.0.1.5
+pytest==9.1.1
+pyvo==1.9.1
+requests==2.34.2
+scipy==1.17.1
